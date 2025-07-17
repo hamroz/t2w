@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project: {{ project_name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 2em; background-color: #f4f4f4; }
+        .container { max-width: 1200px; margin: auto; background: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+        h1, h2 { color: #333; }
+        a { color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .messages { list-style: none; padding: 0; margin-bottom: 1em; }
+        .messages li { padding: 0.8em; border-radius: 4px; }
+        .messages .error { background-color: #f8d7da; color: #721c24; }
+        .messages .success { background-color: #d4edda; color: #155724; }
+        .messages .warning { background-color: #fff3cd; color: #856404; }
+        
+        .project-layout { display: flex; gap: 2em; }
+        .upload-section { flex: 1; }
+        .browser-section { flex: 2; border-left: 1px solid #ccc; padding-left: 2em; }
+        
+        .parser-section {
+            background-color: #e9ecef;
+            padding: 1.5em;
+            border-radius: 5px;
+            margin-top: 2em;
+        }
+        .parser-section h3 { margin-top: 0; }
+        .parser-section .btn-parse {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .parser-section .btn-parse:hover { background: #218838; }
+        .parsed-results ul { padding-left: 20px; }
+        
+        .file-browser ul { list-style: none; padding-left: 0; }
+        .file-browser li { margin-bottom: 8px; }
+        .file-browser a { display: flex; align-items: center; gap: 8px; }
+        .icon-folder, .icon-file { font-size: 1.2em; }
+
+        .breadcrumbs { margin-bottom: 1em; }
+        .breadcrumbs a { font-weight: bold; }
+        .breadcrumbs span { color: #555; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p><a href="{{ url_for('index') }}">&larr; Back to Projects</a></p>
+        <h1>Project: {{ project_name }}</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <ul class="messages">
+            {% for category, message in messages %}
+              <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+        
+        <div class="project-layout">
+            <div class="upload-section">
+                <h2>Upload Tilda Export</h2>
+                <p>Upload a new .zip file to refresh the project content.</p>
+                <form action="{{ url_for('upload_file', project_name=project_name) }}" method="post" enctype="multipart/form-data">
+                    <input type="file" name="file" accept=".zip" required>
+                    <br><br>
+                    <input type="submit" value="Upload and Extract">
+                </form>
+
+                <hr style="margin: 2em 0;">
+                
+                <h2>Uploaded Archive</h2>
+                {% if uploaded_files %}
+                    <p>Current archive: <strong>{{ uploaded_files[0] }}</strong></p>
+                {% else %}
+                    <p>No .zip file has been uploaded yet.</p>
+                {% endif %}
+
+                <div class="parser-section">
+                    <h3>Content Parser</h3>
+                    <p>Run the parser to extract structured data from the uploaded files.</p>
+                    <a href="{{ url_for('run_parser', project_name=project_name) }}" class="btn-parse">Run Parser</a>
+                    
+                    {% if parsed_data %}
+                    <div class="parsed-results" style="margin-top: 1.5em;">
+                        <h4>Parser Results:</h4>
+                        <p><strong>Menu Items:</strong> {{ parsed_data.menu|length }}</p>
+                        <p><strong>Pages Found:</strong> {{ parsed_data.pages|length }}</p>
+                        <ul>
+                            {% for page in parsed_data.pages %}
+                            <li><strong>{{ page.title }}</strong> (<code>{{ page.slug }}</code>) - {{ page.content|length }} content blocks</li>
+                            {% endfor %}
+                        </ul>
+                        <a href="{{ url_for('download_json', project_name=project_name) }}">Download Parsed JSON</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="browser-section">
+                <h2>Extracted Files</h2>
+                <div class="file-browser">
+                    <div class="breadcrumbs">
+                        <a href="{{ url_for('project_view', project_name=project_name) }}">root</a>
+                        {% for crumb in breadcrumbs %}
+                            <span>/</span> <a href="{{ url_for('project_view', project_name=project_name, subpath=crumb.path) }}">{{ crumb.name }}</a>
+                        {% endfor %}
+                    </div>
+                    <ul>
+                        {% for dir in directories %}
+                        <li>
+                            <a href="{{ url_for('project_view', project_name=project_name, subpath=current_path + dir + '/') }}">
+                                <span class="icon-folder">📁</span> {{ dir }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                        {% for file in files %}
+                        <li>
+                            <a href="{{ url_for('view_file', project_name=project_name, filepath=current_path + file) }}" target="_blank">
+                                <span class="icon-file">📄</span> {{ file }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% if not directories and not files %}
+                        <p>This directory is empty.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

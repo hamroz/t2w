@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rename Project: {{ project_name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 2em; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: auto; background: #fff; padding: 2em; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+        a { color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .messages { list-style: none; padding: 0; margin-bottom: 1em; }
+        .messages li { padding: 0.8em; border-radius: 4px; }
+        .messages .error { background-color: #f8d7da; color: #721c24; }
+        form { margin-top: 2em; }
+        input[type="text"] { width: calc(100% - 22px); padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        input[type="submit"] { padding: 10px 20px; border: none; background: #007bff; color: white; border-radius: 4px; cursor: pointer; }
+        input[type="submit"]:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p><a href="{{ url_for('index') }}">&larr; Back to Projects</a></p>
+        <h1>Rename Project</h1>
+        <p>Current name: <strong>{{ project_name }}</strong></p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <ul class="messages">
+            {% for category, message in messages %}
+              <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('rename_project', project_name=project_name) }}" method="post">
+            <input type="text" name="new_project_name" placeholder="Enter new project name" required>
+            <input type="submit" value="Rename Project">
+        </form>
+    </div>
+</body>
+</html> 

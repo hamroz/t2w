@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tilda to WordPress Migration Projects</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 2em; background-color: #f4f4f4; }
+        .container { max-width: 800px; margin: auto; background: #fff; padding: 2em; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #333; }
+        ul { list-style: none; padding: 0; }
+        li { 
+            background: #eee; 
+            margin-bottom: 10px; 
+            padding: 15px; 
+            border-radius: 5px; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        li a { text-decoration: none; color: #007bff; font-weight: bold; }
+        li a:hover { text-decoration: underline; }
+        .project-actions .btn-rename, .project-actions .btn-delete {
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            color: white;
+            font-size: 0.9em;
+        }
+        .project-actions .btn-rename {
+            background-color: #007bff;
+            margin-right: 5px;
+        }
+        .project-actions .btn-rename:hover {
+            background-color: #0056b3;
+        }
+        .project-actions .btn-delete {
+            background-color: #dc3545;
+            border: none;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+        }
+        .project-actions .btn-delete:hover {
+            background-color: #c82333;
+        }
+        .messages { list-style: none; padding: 0; margin-bottom: 1em; }
+        .messages li { padding: 0.8em; border-radius: 4px; }
+        .messages .error { background-color: #f8d7da; color: #721c24; }
+        .messages .success { background-color: #d4edda; color: #155724; }
+        form { margin-top: 2em; }
+        input[type="text"] { width: 70%; padding: 8px; margin-right: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        input[type="submit"] { padding: 8px 15px; border: none; background: #28a745; color: white; border-radius: 4px; cursor: pointer; }
+        input[type="submit"]:hover { background: #218838; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Migration Projects</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <ul class="messages">
+            {% for category, message in messages %}
+              <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+
+        <h2>Existing Projects</h2>
+        {% if projects %}
+            <ul>
+            {% for project in projects %}
+                <li>
+                    <a href="{{ url_for('project_view', project_name=project) }}">{{ project }}</a>
+                    <div class="project-actions">
+                        <a href="{{ url_for('rename_project', project_name=project) }}" class="btn-rename">Rename</a>
+                        <form action="{{ url_for('delete_project', project_name=project) }}" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this project? This action cannot be undone.');">
+                            <input type="submit" value="Delete" class="btn-delete">
+                        </form>
+                    </div>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>No projects found. Create one below.</p>
+        {% endif %}
+
+        <hr>
+
+        <h2>Create New Project</h2>
+        <form action="{{ url_for('create_project') }}" method="post">
+            <input type="text" name="project_name" placeholder="Enter new project name" required>
+            <input type="submit" value="Create Project">
+        </form>
+    </div>
+</body>
+</html> 

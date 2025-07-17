@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View: {{ filepath }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 2em; background-color: #f4f4f4; }
+        .container { max-width: 1200px; margin: auto; background: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+        h1 { color: #333; font-size: 1.5em; }
+        a { color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .file-content {
+            background-color: #2b2b2b;
+            color: #f8f8f2;
+            padding: 1.5em;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .non-text {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 1.5em;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p><a href="{{ url_for('project_view', project_name=project_name, subpath=filepath.rsplit('/', 1)[0] if '/' in filepath else '') }}">&larr; Back to File Browser</a></p>
+        <h1>Viewing: {{ filepath }}</h1>
+
+        {% if is_text %}
+            <pre class="file-content"><code>{{ content }}</code></pre>
+        {% else %}
+            <div class="non-text">
+                <p>{{ content }}</p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html> 
