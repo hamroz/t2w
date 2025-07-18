@@ -97,7 +97,7 @@
                             <li><strong>{{ page.title }}</strong> (<code>{{ page.slug }}</code>) - {{ page.content|length }} content blocks</li>
                             {% endfor %}
                         </ul>
-                        <a href="{{ url_for('download_json', project_name=project_name) }}">Download Parsed JSON</a>
+                        <a href="{{ url_for('download_json', project_name=project_name) }}">📄 Download Parsed Data (.zip)</a>
                     </div>
                     {% endif %}
                 </div>

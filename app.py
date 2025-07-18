@@ -6,7 +6,7 @@ import mimetypes
 import json
 from flask import Flask, request, render_template, redirect, url_for, flash, send_from_directory
 from werkzeug.utils import secure_filename
-from parser import parse_tilda_export, save_parsed_data
+from parser import parse_tilda_export
 
 # Define allowed file extensions
 ALLOWED_EXTENSIONS = {'zip'}
@@ -40,6 +40,55 @@ def get_secure_project_path(project_name):
     if not os.path.isdir(project_path):
         return None
     return project_path
+
+def save_parsed_data(project_path, data):
+    """Saves the structured data into a directory with separate JSON files."""
+    output_dir = os.path.join(project_path, 'parsed_output')
+    pages_dir = os.path.join(output_dir, 'pages')
+
+    # Clean up old parsed data before saving new
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+    
+    os.makedirs(pages_dir, exist_ok=True)
+
+    # Save the menu
+    menu_data = data.get('menu', [])
+    with open(os.path.join(output_dir, 'menu.json'), 'w', encoding='utf-8') as f:
+        json.dump(menu_data, f, indent=4)
+
+    # Save each page as a separate JSON file
+    for page in data.get('pages', []):
+        slug = page.get('slug', 'untitled').strip('/')
+        if not slug:
+            slug = 'home'
+        filename = f"{secure_filename(slug)}.json"
+        with open(os.path.join(pages_dir, filename), 'w', encoding='utf-8') as f:
+            json.dump(page, f, indent=4)
+
+def load_parsed_data(project_path):
+    """Loads all parsed data from the structured directory."""
+    output_dir = os.path.join(project_path, 'parsed_output')
+    if not os.path.isdir(output_dir):
+        return None
+
+    data = {'menu': [], 'pages': []}
+    
+    # Load menu
+    menu_path = os.path.join(output_dir, 'menu.json')
+    if os.path.exists(menu_path):
+        with open(menu_path, 'r', encoding='utf-8') as f:
+            data['menu'] = json.load(f)
+
+    # Load pages
+    pages_dir = os.path.join(output_dir, 'pages')
+    if os.path.isdir(pages_dir):
+        for filename in os.listdir(pages_dir):
+            if filename.endswith('.json'):
+                with open(os.path.join(pages_dir, filename), 'r', encoding='utf-8') as f:
+                    data['pages'].append(json.load(f))
+                    
+    return data
 
 def get_secure_subpath(project_path, subpath):
     """Get and validate a subpath within a project's extracted folder."""
@@ -92,12 +141,8 @@ def project_view(project_name, subpath=''):
         flash(f"Project '{project_name}' not found.", 'error')
         return redirect(url_for('index'))
 
-    # Load parsed data if it exists
-    parsed_data = None
-    parsed_data_path = os.path.join(project_path, 'parsed_data.json')
-    if os.path.exists(parsed_data_path):
-        with open(parsed_data_path, 'r', encoding='utf-8') as f:
-            parsed_data = json.load(f)
+    # Load parsed data from the new structure
+    parsed_data = load_parsed_data(project_path)
 
     browse_path = get_secure_subpath(project_path, subpath)
     if not browse_path or not os.path.exists(browse_path):
@@ -145,7 +190,7 @@ def run_parser(project_name):
     if "error" in structured_data:
         flash(f"Parser error: {structured_data['error']}", 'error')
     else:
-        # Save the structured data to a file
+        # Save the structured data to the new directory structure
         save_parsed_data(project_path, structured_data)
         flash("Parsing complete. Found {} pages.".format(len(structured_data.get('pages', []))), 'success')
 
@@ -159,12 +204,15 @@ def download_json(project_name):
         flash(f"Project '{project_name}' not found.", 'error')
         return redirect(url_for('index'))
         
-    json_path = os.path.join(project_path, 'parsed_data.json')
-    if not os.path.exists(json_path):
+    output_dir = os.path.join(project_path, 'parsed_output')
+    if not os.path.isdir(output_dir):
         flash("No parsed data found to download.", 'error')
         return redirect(url_for('project_view', project_name=project_name))
 
-    return send_from_directory(directory=project_path, path='parsed_data.json', as_attachment=True)
+    # To download the data, we'll zip the entire parsed_output directory
+    shutil.make_archive(os.path.join(project_path, 'parsed_data'), 'zip', output_dir)
+    
+    return send_from_directory(directory=project_path, path='parsed_data.zip', as_attachment=True)
 
 
 @app.route('/project/<project_name>/view/<path:filepath>')
