@@ -34,6 +34,9 @@
             padding: 10px 15px;
             border-radius: 5px;
             text-decoration: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
         }
         .parser-section .btn-parse:hover { background: #218838; }
         .parsed-results ul { padding-left: 20px; }
@@ -47,6 +50,14 @@
         .breadcrumbs a { font-weight: bold; }
         .breadcrumbs span { color: #555; }
     </style>
+    <script>
+        function runParser() {
+            const includeImages = document.getElementById('include-images').checked;
+            const url = "{{ url_for('run_parser', project_name=project_name) }}" + 
+                       "?include_images=" + (includeImages ? 'true' : 'false');
+            window.location.href = url;
+        }
+    </script>
 </head>
 <body>
     <div class="container">
@@ -85,7 +96,18 @@
                 <div class="parser-section">
                     <h3>Content Parser</h3>
                     <p>Run the parser to extract structured data from the uploaded files.</p>
-                    <a href="{{ url_for('run_parser', project_name=project_name) }}" class="btn-parse">Run Parser</a>
+                    
+                    <div class="parser-options" style="margin-bottom: 1em;">
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                            <input type="checkbox" id="include-images" checked>
+                            <span>Include images in parsed data</span>
+                        </label>
+                        <p style="font-size: 0.9em; color: #666; margin: 0;">
+                            Uncheck to exclude image references from the JSON output (reduces file size)
+                        </p>
+                    </div>
+                    
+                    <button onclick="runParser()" class="btn-parse">Run Parser</button>
                     
                     {% if parsed_data %}
                     <div class="parsed-results" style="margin-top: 1.5em;">

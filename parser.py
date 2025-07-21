@@ -61,8 +61,27 @@ def get_page_slug(filepath, soup):
     # Try to get slug from <meta property="og:url">
     og_url_tag = soup.find('meta', property='og:url')
     if og_url_tag and og_url_tag.get('content'):
-        # Extract path from full URL
-        return "/" + og_url_tag['content'].strip().split('/')[-1].replace('.html', '')
+        # Extract full path from URL, preserving hierarchical structure
+        full_url = og_url_tag['content'].strip()
+        
+        # Parse the URL to get just the path component
+        from urllib.parse import urlparse
+        parsed_url = urlparse(full_url)
+        path = parsed_url.path
+        
+        # Remove .html extension if present and ensure it starts with /
+        if path.endswith('.html'):
+            path = path[:-5]  # Remove .html
+        
+        # Handle root path
+        if not path or path == '/':
+            return '/'
+        
+        # Ensure the path starts with /
+        if not path.startswith('/'):
+            path = '/' + path
+            
+        return path
 
     # Fallback to filename
     slug = os.path.basename(filepath).replace('.html', '')
@@ -127,7 +146,7 @@ def parse_menu(soup):
 
     return menu
 
-def parse_page_content(soup):
+def parse_page_content(soup, include_images=True):
     """Extract structured content from a BeautifulSoup object, focusing on Tilda-specific elements while maintaining document order."""
     content = []
     
@@ -276,8 +295,8 @@ def parse_page_content(soup):
                     "priority": 7
                 }
 
-        # PRIORITY 8: Images
-        elif element.name == 'img':
+        # PRIORITY 8: Images (only if include_images is True)
+        elif element.name == 'img' and include_images:
             src = element.get('src') or element.get('data-original')
             alt = element.get('alt', '')
             if src and not src.startswith('data:'):  # Exclude base64 embedded images
@@ -349,7 +368,7 @@ def parse_page_content(soup):
 
     return content
 
-def parse_tilda_export(project_path):
+def parse_tilda_export(project_path, include_images=True):
     """
     Main function to parse the extracted Tilda project.
     Returns a dictionary with structured pages and menu data.
@@ -377,7 +396,7 @@ def parse_tilda_export(project_path):
         
         page_title = soup.title.string.strip() if soup.title else "Untitled"
         page_slug = get_page_slug(file_path, soup)
-        page_content = parse_page_content(soup)
+        page_content = parse_page_content(soup, include_images)
         
         if page_content:
             structured_data["pages"].append({

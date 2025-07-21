@@ -182,17 +182,21 @@ def run_parser(project_name):
         flash(f"Project '{project_name}' not found.", 'error')
         return redirect(url_for('index'))
 
+    # Get the include_images parameter from query string (default: True)
+    include_images = request.args.get('include_images', 'true').lower() == 'true'
+    
     flash("Starting the parsing process...", "info")
     
-    # Run the parser
-    structured_data = parse_tilda_export(project_path)
+    # Run the parser with the include_images option
+    structured_data = parse_tilda_export(project_path, include_images)
     
     if "error" in structured_data:
         flash(f"Parser error: {structured_data['error']}", 'error')
     else:
         # Save the structured data to the new directory structure
         save_parsed_data(project_path, structured_data)
-        flash("Parsing complete. Found {} pages.".format(len(structured_data.get('pages', []))), 'success')
+        images_msg = " (excluding images)" if not include_images else " (including images)"
+        flash("Parsing complete. Found {} pages{}.".format(len(structured_data.get('pages', [])), images_msg), 'success')
 
     return redirect(url_for('project_view', project_name=project_name))
 
