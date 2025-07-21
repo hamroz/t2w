@@ -4,9 +4,13 @@ import datetime
 import shutil
 import mimetypes
 import json
-from flask import Flask, request, render_template, redirect, url_for, flash, send_from_directory
+import threading
+from flask import Flask, request, render_template, redirect, url_for, flash, send_from_directory, jsonify, Response
 from werkzeug.utils import secure_filename
 from parser import parse_tilda_export
+from migration import MigrationManager
+from progress_tracker import ProgressTracker
+import time
 
 # Define allowed file extensions
 ALLOWED_EXTENSIONS = {'zip'}
@@ -358,6 +362,213 @@ def upload_file(project_name):
     else:
         flash('Invalid file type. Please upload a .zip file.', 'error')
         return redirect(url_for('project_view', project_name=project_name))
+
+# Global storage for active migrations (in production, use Redis or database)
+active_migrations = {}
+
+@app.route('/project/<project_name>/wordpress')
+def wordpress_migration(project_name):
+    """WordPress migration page."""
+    project_path = get_secure_project_path(project_name)
+    if not project_path:
+        flash(f"Project '{project_name}' not found.", 'error')
+        return redirect(url_for('index'))
+    
+    # Load parsed data to show preview
+    parsed_data = load_parsed_data(project_path)
+    
+    # Get migration history
+    migration_history = MigrationManager.get_project_migration_history(project_path)
+    
+    return render_template('wordpress_migration.html', 
+                         project_name=project_name,
+                         parsed_data=parsed_data,
+                         migration_history=migration_history)
+
+@app.route('/project/<project_name>/wordpress/test-connection', methods=['POST'])
+def test_wordpress_connection(project_name):
+    """Test WordPress connection."""
+    project_path = get_secure_project_path(project_name)
+    if not project_path:
+        return jsonify({'success': False, 'message': 'Project not found'})
+    
+    wp_site_url = request.form.get('wp_site_url', '').strip()
+    wp_username = request.form.get('wp_username', '').strip()
+    wp_password = request.form.get('wp_password', '').strip()
+    
+    if not all([wp_site_url, wp_username, wp_password]):
+        return jsonify({'success': False, 'message': 'All fields are required'})
+    
+    try:
+        migration_manager = MigrationManager(project_path, wp_site_url, wp_username, wp_password)
+        result = migration_manager.validate_connection()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Connection test failed: {str(e)}'})
+
+@app.route('/project/<project_name>/wordpress/start-migration', methods=['POST'])
+def start_wordpress_migration(project_name):
+    """Start WordPress migration in background."""
+    project_path = get_secure_project_path(project_name)
+    if not project_path:
+        return jsonify({'success': False, 'message': 'Project not found'})
+    
+    wp_site_url = request.form.get('wp_site_url', '').strip()
+    wp_username = request.form.get('wp_username', '').strip()
+    wp_password = request.form.get('wp_password', '').strip()
+    
+    if not all([wp_site_url, wp_username, wp_password]):
+        return jsonify({'success': False, 'message': 'All WordPress fields are required'})
+    
+    # Check if migration is already running
+    if project_name in active_migrations:
+        return jsonify({'success': False, 'message': 'Migration already in progress for this project'})
+    
+    try:
+        # Create migration manager
+        migration_manager = MigrationManager(project_path, wp_site_url, wp_username, wp_password)
+        
+        # Start migration in background thread
+        def run_migration():
+            try:
+                active_migrations[project_name] = migration_manager
+                result = migration_manager.start_migration()
+                # Keep migration manager available for progress tracking
+                if not result['success']:
+                    # Remove from active migrations if failed to start
+                    active_migrations.pop(project_name, None)
+            except Exception as e:
+                migration_manager.tracker.log_operation(f"Migration error: {str(e)}", "ERROR")
+                migration_manager.tracker.complete_migration(False)
+            finally:
+                # Remove from active migrations when complete
+                active_migrations.pop(project_name, None)
+        
+        thread = threading.Thread(target=run_migration)
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({'success': True, 'message': 'Migration started'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Failed to start migration: {str(e)}'})
+
+@app.route('/project/<project_name>/wordpress/migration-status')
+def get_migration_status(project_name):
+    """Get current migration status."""
+    project_path = get_secure_project_path(project_name)
+    if not project_path:
+        return jsonify({'error': 'Project not found'})
+    
+    # Check if migration is currently active
+    if project_name in active_migrations:
+        migration_manager = active_migrations[project_name]
+        status = migration_manager.get_migration_status()
+        recent_logs = migration_manager.get_migration_logs(20)
+        return jsonify({
+            'status': status,
+            'logs': recent_logs,
+            'is_active': True
+        })
+    
+    # If no active migration, try to get the latest completed migration
+    migration_history = MigrationManager.get_project_migration_history(project_path)
+    if migration_history:
+        latest = migration_history[0]
+        return jsonify({
+            'status': latest,
+            'logs': ProgressTracker.get_migration_log(project_path, latest['migration_id']).split('\n')[-20:],
+            'is_active': False
+        })
+    
+    return jsonify({'status': None, 'logs': [], 'is_active': False})
+
+@app.route('/project/<project_name>/wordpress/migration-logs/<migration_id>')
+def get_migration_details(project_name, migration_id):
+    """Get detailed logs for a specific migration."""
+    project_path = get_secure_project_path(project_name)
+    if not project_path:
+        return jsonify({'error': 'Project not found'})
+    
+    details = MigrationManager.get_migration_details(project_path, migration_id)
+    if not details:
+        return jsonify({'error': 'Migration not found'})
+    
+    return jsonify(details)
+
+@app.route('/project/<project_name>/wordpress/migration-stream')
+def migration_log_stream(project_name):
+    """Server-sent events stream for real-time migration progress."""
+    project_path = get_secure_project_path(project_name)
+    if not project_path:
+        return Response("data: {\"error\": \"Project not found\"}\n\n", mimetype='text/plain')
+    
+    def generate():
+        last_percentage = -1
+        last_log_count = 0
+        completion_sent = False
+        
+        while True:
+            try:
+                if project_name in active_migrations:
+                    migration_manager = active_migrations[project_name]
+                    status = migration_manager.get_migration_status()
+                    logs = migration_manager.get_migration_logs(100)
+                    
+                    # Send updates only if there are changes
+                    if (status['percentage'] != last_percentage or 
+                        len(logs) != last_log_count or
+                        status['status'] in ['completed', 'failed']):
+                        
+                        data = {
+                            'percentage': status['percentage'],
+                            'current_operation': status['current_operation'],
+                            'status': status['status'],
+                            'new_logs': logs[last_log_count:] if len(logs) > last_log_count else []
+                        }
+                        
+                        yield f"data: {json.dumps(data)}\n\n"
+                        
+                        last_percentage = status['percentage']
+                        last_log_count = len(logs)
+                        
+                        # Mark completion as sent and break after a small delay
+                        if status['status'] in ['completed', 'failed'] and not completion_sent:
+                            completion_sent = True
+                            time.sleep(2)  # Give time for the frontend to process the completion
+                            break
+                            
+                elif completion_sent:
+                    # Migration was active but is now complete
+                    break
+                else:
+                    # Check if there's a recently completed migration
+                    migration_history = MigrationManager.get_project_migration_history(project_path)
+                    if migration_history:
+                        latest = migration_history[0]
+                        if latest['status'] in ['completed', 'failed']:
+                            # Send the final status
+                            data = {
+                                'percentage': 100 if latest['status'] == 'completed' else latest.get('percentage', 0),
+                                'current_operation': latest['current_operation'],
+                                'status': latest['status'],
+                                'new_logs': []
+                            }
+                            yield f"data: {json.dumps(data)}\n\n"
+                            time.sleep(1)
+                            break
+                    
+                    # No active migration and no recent completion
+                    yield f"data: {{\"status\": \"no_active_migration\"}}\n\n"
+                    break
+                
+                time.sleep(1)  # Update every second
+                
+            except Exception as e:
+                yield f"data: {{\"error\": \"{str(e)}\"}}\n\n"
+                break
+    
+    return Response(generate(), mimetype='text/event-stream')
 
 if __name__ == "__main__":
     app.run(debug=True) 

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordPress Migration - {{ project_name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 8px; padding: 2em; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1, h2, h3 { color: #333; }
+        .messages { padding: 0; margin: 1em 0; }
+        .messages li { list-style: none; padding: 10px; margin-bottom: 5px; border-radius: 4px; }
+        .messages .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .messages .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .messages .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .messages .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        
+        .migration-sections {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2em;
+            margin-top: 2em;
+        }
+        
+        .section {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5em;
+            background: #f8f9fa;
+        }
+        
+        .section h3 {
+            margin-top: 0;
+            color: #495057;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 0.5em;
+        }
+        
+        .form-group {
+            margin-bottom: 1em;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5em;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.75em;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.75em 1.5em;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary { background: #007bff; color: white; }
+        .btn-primary:hover { background: #0056b3; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #1e7e34; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #545b62; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-disconnected { background: #dc3545; }
+        .status-connected { background: #28a745; }
+        .status-testing { background: #ffc107; animation: pulse 1s infinite; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .progress-section {
+            grid-column: 1 / -1;
+            display: none;
+        }
+        
+        .progress-section.active {
+            display: block;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 24px;
+            background: #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 1em 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .log-container {
+            background: #212529;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            padding: 1em;
+            border-radius: 4px;
+            height: 300px;
+            overflow-y: auto;
+            margin-top: 1em;
+        }
+        
+        .log-entry {
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+        
+        .log-entry.success { color: #90ee90; }
+        .log-entry.error { color: #ff6b6b; }
+        .log-entry.warning { color: #ffd93d; }
+        .log-entry.info { color: #74c0fc; }
+        
+        .preview-section {
+            margin-top: 1em;
+            padding: 1em;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        
+        .preview-stats {
+            display: flex;
+            gap: 2em;
+            margin-bottom: 1em;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        
+        .history-section {
+            margin-top: 2em;
+        }
+        
+        .history-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 1em;
+            margin-bottom: 1em;
+        }
+        
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5em;
+        }
+        
+        .history-status {
+            padding: 0.25em 0.75em;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        
+        .history-status.completed { background: #d4edda; color: #155724; }
+        .history-status.failed { background: #f8d7da; color: #721c24; }
+        .history-status.running { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p><a href="{{ url_for('project_view', project_name=project_name) }}">&larr; Back to Project</a></p>
+        <h1>🚀 WordPress Migration - {{ project_name }}</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <ul class="messages">
+            {% for category, message in messages %}
+              <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Data Preview -->
+        {% if parsed_data and parsed_data.pages %}
+        <div class="preview-section">
+            <h3>📊 Migration Preview</h3>
+            <div class="preview-stats">
+                <div class="stat-item">
+                    <div class="stat-number">{{ parsed_data.pages|length }}</div>
+                    <div class="stat-label">Pages to Migrate</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">{{ parsed_data.menu|length if parsed_data.menu else 0 }}</div>
+                    <div class="stat-label">Menu Items</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">
+                        {% set total_content = [] %}
+                        {% for page in parsed_data.pages %}
+                            {% set _ = total_content.extend(page.content) %}
+                        {% endfor %}
+                        {{ total_content|length }}
+                    </div>
+                    <div class="stat-label">Content Blocks</div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="preview-section">
+            <h3>⚠️ No Parsed Data</h3>
+            <p>Please run the parser first before attempting migration.</p>
+            <a href="{{ url_for('project_view', project_name=project_name) }}" class="btn btn-secondary">Go to Extraction & Parsing</a>
+        </div>
+        {% endif %}
+
+        <div class="migration-sections">
+            <!-- WordPress Configuration -->
+            <div class="section">
+                <h3>🔧 WordPress Configuration</h3>
+                <form id="wp-config-form">
+                    <div class="form-group">
+                        <label for="wp_site_url">WordPress Site URL</label>
+                        <input type="url" id="wp_site_url" name="wp_site_url" 
+                               placeholder="https://yoursite.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="wp_username">Username</label>
+                        <input type="text" id="wp_username" name="wp_username" 
+                               placeholder="admin" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="wp_password">Application Password</label>
+                        <input type="password" id="wp_password" name="wp_password" 
+                               placeholder="xxxx xxxx xxxx xxxx xxxx xxxx" required>
+                        <small style="color: #6c757d; font-size: 0.8em;">
+                            Generate an Application Password in WordPress Admin → Users → Your Profile
+                        </small>
+                    </div>
+                    
+                    <div style="margin-top: 1.5em;">
+                        <button type="button" id="test-connection-btn" class="btn btn-secondary">
+                            <span class="status-indicator status-disconnected"></span>
+                            Test Connection
+                        </button>
+                        <div id="connection-status" style="margin-top: 0.5em; font-size: 0.9em;"></div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Migration Controls -->
+            <div class="section">
+                <h3>🎯 Migration Options</h3>
+                
+                <div style="margin-bottom: 1.5em;">
+                    <h4>Migration Settings:</h4>
+                    <ul style="color: #6c757d; font-size: 0.9em; line-height: 1.6;">
+                        <li>✅ Content converted to Gutenberg blocks</li>
+                        <li>✅ Page hierarchy preserved</li>
+                        <li>✅ SEO slugs maintained</li>
+                        <li>🚫 Images skipped (as configured)</li>
+                        <li>⚠️ Existing pages will be skipped</li>
+                    </ul>
+                </div>
+                
+                <button type="button" id="start-migration-btn" class="btn btn-success" disabled>
+                    🚀 Start Migration
+                </button>
+            </div>
+
+            <!-- Progress Section -->
+            <div class="section progress-section" id="progress-section">
+                <h3>📈 Migration Progress</h3>
+                
+                <div id="progress-status">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill">0%</div>
+                    </div>
+                    <div id="current-operation" style="margin-top: 0.5em; font-weight: 600;">
+                        Preparing migration...
+                    </div>
+                </div>
+                
+                <div class="log-container" id="log-container">
+                    <div class="log-entry">Waiting for migration to start...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Migration History -->
+        {% if migration_history %}
+        <div class="history-section">
+            <h3>📚 Migration History</h3>
+            {% for migration in migration_history[:5] %}
+            <div class="history-item">
+                <div class="history-header">
+                    <strong>Migration {{ migration.migration_id }}</strong>
+                    <span class="history-status {{ migration.status }}">{{ migration.status.title() }}</span>
+                </div>
+                <div style="font-size: 0.9em; color: #6c757d;">
+                    Started: {{ migration.started_at[:19].replace('T', ' ') }}
+                    {% if migration.completed_at %}
+                    | Completed: {{ migration.completed_at[:19].replace('T', ' ') }}
+                    {% endif %}
+                    <br>
+                    {{ migration.successful_pages }}/{{ migration.total_pages }} pages successful
+                    {% if migration.failed_pages > 0 %}
+                    | {{ migration.failed_pages }} failed
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        let connectionTested = false;
+        let migrationActive = false;
+        let eventSource = null;
+
+        // Test WordPress connection
+        document.getElementById('test-connection-btn').addEventListener('click', function() {
+            const btn = this;
+            const statusDiv = document.getElementById('connection-status');
+            const indicator = btn.querySelector('.status-indicator');
+            
+            // Get form data
+            const formData = new FormData();
+            formData.append('wp_site_url', document.getElementById('wp_site_url').value);
+            formData.append('wp_username', document.getElementById('wp_username').value);
+            formData.append('wp_password', document.getElementById('wp_password').value);
+            
+            // Update UI
+            btn.disabled = true;
+            indicator.className = 'status-indicator status-testing';
+            btn.innerHTML = '<span class="status-indicator status-testing"></span>Testing...';
+            statusDiv.innerHTML = '';
+            
+            fetch(`/project/{{ project_name }}/wordpress/test-connection`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    indicator.className = 'status-indicator status-connected';
+                    btn.innerHTML = '<span class="status-indicator status-connected"></span>Connected';
+                    statusDiv.innerHTML = `<span style="color: #28a745;">✓ ${data.message}</span>`;
+                    connectionTested = true;
+                    document.getElementById('start-migration-btn').disabled = false;
+                } else {
+                    indicator.className = 'status-indicator status-disconnected';
+                    btn.innerHTML = '<span class="status-indicator status-disconnected"></span>Connection Failed';
+                    statusDiv.innerHTML = `<span style="color: #dc3545;">✗ ${data.message}</span>`;
+                    connectionTested = false;
+                }
+            })
+            .catch(error => {
+                indicator.className = 'status-indicator status-disconnected';
+                btn.innerHTML = '<span class="status-indicator status-disconnected"></span>Error';
+                statusDiv.innerHTML = `<span style="color: #dc3545;">✗ ${error.message}</span>`;
+                connectionTested = false;
+            })
+            .finally(() => {
+                btn.disabled = false;
+            });
+        });
+
+        // Start migration
+        document.getElementById('start-migration-btn').addEventListener('click', function() {
+            if (!connectionTested) {
+                alert('Please test the WordPress connection first.');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('wp_site_url', document.getElementById('wp_site_url').value);
+            formData.append('wp_username', document.getElementById('wp_username').value);
+            formData.append('wp_password', document.getElementById('wp_password').value);
+            
+            // Show progress section
+            document.getElementById('progress-section').classList.add('active');
+            this.disabled = true;
+            migrationActive = true;
+            
+            fetch(`/project/{{ project_name }}/wordpress/start-migration`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Start listening to progress updates
+                    startProgressTracking();
+                } else {
+                    document.getElementById('current-operation').textContent = `Error: ${data.message}`;
+                    this.disabled = false;
+                    migrationActive = false;
+                }
+            })
+            .catch(error => {
+                document.getElementById('current-operation').textContent = `Error: ${error.message}`;
+                this.disabled = false;
+                migrationActive = false;
+            });
+        });
+
+        function startProgressTracking() {
+            eventSource = new EventSource(`/project/{{ project_name }}/wordpress/migration-stream`);
+            
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                
+                if (data.error) {
+                    document.getElementById('current-operation').textContent = `Error: ${data.error}`;
+                    eventSource.close();
+                    return;
+                }
+                
+                if (data.status === 'no_active_migration') {
+                    eventSource.close();
+                    return;
+                }
+                
+                // Update progress bar
+                if (data.percentage !== undefined) {
+                    const progressFill = document.getElementById('progress-fill');
+                    progressFill.style.width = `${data.percentage}%`;
+                    progressFill.textContent = `${data.percentage}%`;
+                }
+                
+                // Update current operation
+                if (data.current_operation) {
+                    document.getElementById('current-operation').textContent = data.current_operation;
+                }
+                
+                // Add new log entries
+                if (data.new_logs && data.new_logs.length > 0) {
+                    const logContainer = document.getElementById('log-container');
+                    data.new_logs.forEach(log => {
+                        const logEntry = document.createElement('div');
+                        logEntry.className = 'log-entry';
+                        
+                        // Determine log level from content
+                        if (log.includes('SUCCESS') || log.includes('✓')) {
+                            logEntry.classList.add('success');
+                        } else if (log.includes('ERROR') || log.includes('✗')) {
+                            logEntry.classList.add('error');
+                        } else if (log.includes('WARNING') || log.includes('⚠')) {
+                            logEntry.classList.add('warning');
+                        } else {
+                            logEntry.classList.add('info');
+                        }
+                        
+                        logEntry.textContent = log.trim();
+                        logContainer.appendChild(logEntry);
+                    });
+                    
+                    // Auto-scroll to bottom
+                    logContainer.scrollTop = logContainer.scrollHeight;
+                }
+                
+                // Check if migration is complete
+                if (data.status === 'completed' || data.status === 'failed') {
+                    eventSource.close();
+                    document.getElementById('start-migration-btn').disabled = false;
+                    migrationActive = false;
+                    
+                    // Reload page after completion to show updated history
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 3000);
+                }
+            };
+            
+            eventSource.onerror = function(event) {
+                console.error('EventSource failed:', event);
+                eventSource.close();
+                document.getElementById('start-migration-btn').disabled = false;
+                migrationActive = false;
+            };
+        }
+    </script>
+</body>
+</html> 
