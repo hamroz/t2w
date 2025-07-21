@@ -253,6 +253,36 @@ def view_file(project_name, filepath):
         flash(f"Could not read file: {e}", 'error')
         return redirect(url_for('project_view', project_name=project_name, subpath=os.path.dirname(filepath)))
 
+@app.route('/project/<project_name>/page/<path:page_slug>')
+def view_parsed_page(project_name, page_slug):
+    """Display the parsed content of a specific page with copy functionality."""
+    project_path = get_secure_project_path(project_name)
+    if not project_path:
+        flash(f"Project '{project_name}' not found.", 'error')
+        return redirect(url_for('index'))
+
+    # Load all parsed data to find the specific page
+    parsed_data = load_parsed_data(project_path)
+    if not parsed_data or not parsed_data.get('pages'):
+        flash('No parsed data found. Please run the parser first.', 'error')
+        return redirect(url_for('project_view', project_name=project_name))
+
+    # Find the page with the matching slug
+    target_page = None
+    for page in parsed_data['pages']:
+        if page.get('slug') == f"/{page_slug}" or page.get('slug') == page_slug:
+            target_page = page
+            break
+    
+    if not target_page:
+        flash(f"Page with slug '{page_slug}' not found.", 'error')
+        return redirect(url_for('project_view', project_name=project_name))
+
+    return render_template('page_view.html', 
+                         project_name=project_name,
+                         page=target_page,
+                         all_pages=parsed_data['pages'])
+
 @app.route('/project/<project_name>/delete', methods=['POST'])
 def delete_project(project_name):
     """Delete a project."""

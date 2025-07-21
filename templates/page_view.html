@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.title }} - {{ project_name }}</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            line-height: 1.6; 
+            margin: 2em; 
+            background-color: #f4f4f4; 
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: auto; 
+            background: #fff; 
+            padding: 2em; 
+            border-radius: 8px; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.1); 
+        }
+        
+        h1, h2, h3 { color: #333; }
+        
+        a { 
+            color: #007bff; 
+            text-decoration: none; 
+        }
+        
+        a:hover { 
+            text-decoration: underline; 
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1.5em;
+            font-weight: 600;
+        }
+        
+        .page-header {
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 1em;
+            margin-bottom: 2em;
+        }
+        
+        .page-title {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        
+        .page-meta {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            background: #e9ecef;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        .content-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5em;
+            margin-bottom: 2em;
+        }
+        
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #007bff;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .content-title {
+            font-size: 1.5rem;
+            color: #495057;
+            margin: 0;
+        }
+        
+        .content-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .content-stats {
+            background: #007bff;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .search-input {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            outline: none;
+            font-size: 14px;
+            min-width: 200px;
+        }
+        
+        .search-input:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-success { 
+            background: #28a745; 
+            color: white; 
+        }
+        
+        .btn-success:hover { 
+            background: #1e7e34; 
+        }
+        
+        .btn-primary { 
+            background: #007bff; 
+            color: white; 
+        }
+        
+        .btn-primary:hover { 
+            background: #0056b3; 
+        }
+        
+        .btn.copied { 
+            background: #28a745 !important; 
+        }
+        
+        .content-blocks {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .content-block {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        
+        .content-block:hover {
+            border-color: #007bff;
+            box-shadow: 0 2px 8px rgba(0,123,255,0.15);
+        }
+        
+        .block-header {
+            background: #e9ecef;
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .block-type {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .block-type.heading { color: #dc3545; }
+        .block-type.paragraph { color: #6c757d; }
+        .block-type.button { color: #007bff; }
+        .block-type.image { color: #28a745; }
+        
+        .copy-btn {
+            background: #6c757d;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .copy-btn:hover {
+            background: #5a6268;
+        }
+        
+        .block-content {
+            padding: 1rem;
+            background: white;
+        }
+        
+        .content-text {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #495057;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            margin: 0;
+        }
+        
+        .content-text.heading {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .content-url {
+            background: #f8f9fa;
+            padding: 0.5rem;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #007bff;
+            margin-top: 0.5rem;
+            word-break: break-all;
+            border-left: 3px solid #007bff;
+        }
+        
+        .block-index {
+            position: absolute;
+            top: -8px;
+            left: 1rem;
+            background: #007bff;
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            z-index: 10;
+        }
+        
+        .content-block {
+            position: relative;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #6c757d;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: #adb5bd;
+        }
+        
+        .page-navigation {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5em;
+        }
+        
+        .nav-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #495057;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 0.5em;
+        }
+        
+        .page-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .page-link {
+            display: block;
+            padding: 1rem;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.2s ease;
+        }
+        
+        .page-link:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
+            text-decoration: none;
+        }
+        
+        .page-link.current {
+            border-color: #007bff;
+            background: #e7f3ff;
+        }
+        
+        .page-link-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: #333;
+        }
+        
+        .page-link-slug {
+            font-size: 0.85rem;
+            color: #6c757d;
+            font-family: monospace;
+        }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                margin: 1rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .page-title {
+                font-size: 1.8rem;
+            }
+            
+            .page-meta {
+                gap: 1rem;
+            }
+            
+            .content-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .page-links {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-input {
+                min-width: auto;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <div class="page-header">
+            <a href="{{ url_for('project_view', project_name=project_name) }}" class="back-link">
+                ← Back to Project
+            </a>
+            <h1 class="page-title">{{ page.title }}</h1>
+            <div class="page-meta">
+                <div class="meta-item">
+                    🔗 <code>{{ page.slug }}</code>
+                </div>
+                <div class="meta-item">
+                    📄 {{ page.content|length }} content blocks
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content Section -->
+        <div class="content-section">
+            <div class="content-header">
+                <h3 class="content-title">Parsed Content</h3>
+                <div class="content-controls">
+                    <div class="content-stats">{{ page.content|length }} blocks</div>
+                    {% if page.content %}
+                    <input type="text" id="searchBlocks" placeholder="Search content..." 
+                           class="search-input" onkeyup="filterBlocks()">
+                    <button class="btn btn-success" onclick="copyAllContent()">
+                        📋 Copy All
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if page.content %}
+            <div class="content-blocks">
+                {% for block in page.content %}
+                <div class="content-block" id="block-{{ loop.index }}">
+                    <div class="block-index">{{ loop.index }}</div>
+                    <div class="block-header">
+                        <div class="block-type {{ block.type }}">
+                            {% if block.type == 'heading' %}
+                                📰 Heading
+                            {% elif block.type == 'paragraph' %}
+                                📝 Paragraph
+                            {% elif block.type == 'button' %}
+                                🔘 Button
+                            {% elif block.type == 'image' %}
+                                🖼️ Image
+                            {% else %}
+                                📄 {{ block.type|title }}
+                            {% endif %}
+                        </div>
+                        <button class="copy-btn" onclick="copyContent({{ loop.index }}, '{{ block.text|replace("'", "\\'") if block.text else block.alt|replace("'", "\\'") if block.alt else '' }}')">
+                            Copy
+                        </button>
+                    </div>
+                    <div class="block-content">
+                        {% if block.text %}
+                            <div class="content-text {{ block.type }}">{{ block.text }}</div>
+                        {% endif %}
+                        {% if block.href %}
+                            <div class="content-url">🔗 {{ block.href }}</div>
+                        {% endif %}
+                        {% if block.src %}
+                            <div class="content-url">🖼️ {{ block.src }}</div>
+                        {% endif %}
+                        {% if block.alt %}
+                            <div class="content-text">Alt text: {{ block.alt }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <h3>📭 No content blocks found</h3>
+                <p>This page doesn't contain any parsed content blocks.</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Page Navigation -->
+        {% if all_pages|length > 1 %}
+        <div class="page-navigation">
+            <h3 class="nav-title">Other Pages</h3>
+            <div class="page-links">
+                {% for other_page in all_pages %}
+                {% set page_slug_clean = other_page.slug.lstrip('/') %}
+                <a href="{{ url_for('view_parsed_page', project_name=project_name, page_slug=page_slug_clean) }}" 
+                   class="page-link {% if other_page.slug == page.slug %}current{% endif %}">
+                    <div class="page-link-title">{{ other_page.title }}</div>
+                    <div class="page-link-slug">{{ other_page.slug }}</div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Toast notification -->
+    <div id="toast" class="toast">✅ Content copied to clipboard!</div>
+    
+    <script>
+        function copyContent(blockIndex, text) {
+            // Use the Clipboard API if available
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showCopySuccess(blockIndex);
+                }).catch(err => {
+                    console.error('Failed to copy text: ', err);
+                    fallbackCopy(text, blockIndex);
+                });
+            } else {
+                fallbackCopy(text, blockIndex);
+            }
+        }
+        
+        function copyAllContent() {
+            // Collect all text content from all blocks
+            const allTexts = [];
+            {% for block in page.content %}
+            {% if block.text %}
+            allTexts.push('{{ block.text|replace("'", "\\'") }}');
+            {% endif %}
+            {% endfor %}
+            
+            const combinedText = allTexts.join('\n\n');
+            
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(combinedText).then(() => {
+                    showCopySuccess('all');
+                }).catch(err => {
+                    console.error('Failed to copy all text: ', err);
+                    fallbackCopy(combinedText, 'all');
+                });
+            } else {
+                fallbackCopy(combinedText, 'all');
+            }
+        }
+        
+        function fallbackCopy(text, blockIndex) {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showCopySuccess(blockIndex);
+            } catch (err) {
+                console.error('Fallback copy failed: ', err);
+                alert('Copy failed. Please select and copy the text manually.');
+            }
+            document.body.removeChild(textArea);
+        }
+        
+        function showCopySuccess(blockIndex) {
+            // Show toast
+            const toast = document.getElementById('toast');
+            
+            if (blockIndex === 'all') {
+                // Update "Copy All" button
+                const allButton = document.querySelector('.content-controls .btn-success');
+                const originalHTML = allButton.innerHTML;
+                allButton.innerHTML = '✅ All Copied!';
+                allButton.classList.add('copied');
+                
+                toast.innerHTML = '✅ All content copied to clipboard!';
+                toast.classList.add('show');
+                
+                setTimeout(() => {
+                    allButton.innerHTML = originalHTML;
+                    allButton.classList.remove('copied');
+                    toast.classList.remove('show');
+                    toast.innerHTML = '✅ Content copied to clipboard!'; // Reset toast message
+                }, 2000);
+            } else {
+                // Update individual block button
+                const button = document.querySelector(`#block-${blockIndex} .copy-btn`);
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '✅ Copied!';
+                button.classList.add('copied');
+                
+                toast.classList.add('show');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.classList.remove('copied');
+                    toast.classList.remove('show');
+                }, 2000);
+            }
+        }
+        
+        function filterBlocks() {
+            const searchTerm = document.getElementById('searchBlocks').value.toLowerCase();
+            const blocks = document.querySelectorAll('.content-block');
+            let visibleCount = 0;
+            
+            blocks.forEach(block => {
+                const content = block.querySelector('.content-text');
+                const text = content ? content.textContent.toLowerCase() : '';
+                
+                if (text.includes(searchTerm) || searchTerm === '') {
+                    block.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    block.style.display = 'none';
+                }
+            });
+            
+            // Update stats
+            const statsElement = document.querySelector('.content-stats');
+            const totalBlocks = {{ page.content|length }};
+            if (searchTerm === '') {
+                statsElement.textContent = `${totalBlocks} blocks`;
+            } else {
+                statsElement.textContent = `${visibleCount} of ${totalBlocks} blocks`;
+            }
+        }
+        
+        // Smooth scroll to block if hash is present
+        if (window.location.hash) {
+            const element = document.querySelector(window.location.hash);
+            if (element) {
+                setTimeout(() => {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + F to focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                e.preventDefault();
+                const searchInput = document.getElementById('searchBlocks');
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.select();
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

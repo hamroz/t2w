@@ -177,12 +177,23 @@
                         <h4>Parser Results:</h4>
                         <p><strong>Menu Items:</strong> {{ parsed_data.menu|length }}</p>
                         <p><strong>Pages Found:</strong> {{ parsed_data.pages|length }}</p>
-                        <ul>
+                        
+                        <div class="pages-list" style="margin: 1em 0;">
                             {% for page in parsed_data.pages %}
-                            <li><strong>{{ page.title }}</strong> (<code>{{ page.slug }}</code>) - {{ page.content|length }} content blocks</li>
+                            <div class="page-item" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 1em; margin-bottom: 0.5em; display: flex; justify-content: space-between; align-items: center;">
+                                <div class="page-info">
+                                    <strong>{{ page.title }}</strong>
+                                    <br><small><code>{{ page.slug }}</code> • {{ page.content|length }} content blocks</small>
+                                </div>
+                                <a href="{{ url_for('view_parsed_page', project_name=project_name, page_slug=page.slug.lstrip('/')) }}" 
+                                   style="background: #007bff; color: white; padding: 0.5em 1em; text-decoration: none; border-radius: 5px; font-size: 0.9em; display: inline-flex; align-items: center; gap: 5px;">
+                                    👁️ View Content
+                                </a>
+                            </div>
                             {% endfor %}
-                        </ul>
-                        <a href="{{ url_for('download_json', project_name=project_name) }}">📄 Download Parsed Data (.zip)</a>
+                        </div>
+                        
+                        <a href="{{ url_for('download_json', project_name=project_name) }}" style="display: inline-block; margin-top: 1em;">📄 Download Parsed Data (.zip)</a>
                     </div>
                     {% endif %}
                 </div>
