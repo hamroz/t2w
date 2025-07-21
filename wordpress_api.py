@@ -129,13 +129,13 @@ class WordPressAPI:
             }
     
     def _convert_to_gutenberg(self, content_blocks):
-        """Convert parsed content blocks to Gutenberg block format."""
-        gutenberg_content = ""
+        """Convert parsed content blocks to Gutenberg block format wrapped in Group -> Column -> Narrow."""
+        inner_content = ""
         
         for block in content_blocks:
             if block['type'] == 'heading':
                 # Create heading block
-                gutenberg_content += f"""
+                inner_content += f"""
 <!-- wp:heading -->
 <h2 class="wp-block-heading">{self._escape_html(block['text'])}</h2>
 <!-- /wp:heading -->
@@ -143,38 +143,44 @@ class WordPressAPI:
 """
             elif block['type'] == 'paragraph':
                 # Create paragraph block
-                gutenberg_content += f"""
+                inner_content += f"""
 <!-- wp:paragraph -->
 <p>{self._escape_html(block['text'])}</p>
 <!-- /wp:paragraph -->
 
 """
-            elif block['type'] == 'list':
-                # Create list block
-                list_items = "".join([f"<li>{self._escape_html(item)}</li>" for item in block['items']])
-                gutenberg_content += f"""
-<!-- wp:list -->
-<ul class="wp-block-list">{list_items}</ul>
-<!-- /wp:list -->
-
-"""
             elif block['type'] == 'button':
-                # Create button block
-                href = block.get('href', '#')
-                text = self._escape_html(block['text'])
-                gutenberg_content += f"""
+                # Create button block (skip if no text)
+                if block.get('text'):
+                    href = block.get('href', '#')
+                    inner_content += f"""
 <!-- wp:buttons -->
 <div class="wp-block-buttons">
 <!-- wp:button -->
-<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="{href}">{text}</a></div>
+<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="{self._escape_html(href)}">{self._escape_html(block['text'])}</a></div>
 <!-- /wp:button -->
 </div>
 <!-- /wp:buttons -->
 
 """
-            # Note: We're skipping images as per requirements
-        
-        return gutenberg_content.strip()
+            # Skip image blocks as requested
+            
+        # Wrap all content in Group -> Columns -> Column (with Narrow style)
+        return f"""
+<!-- wp:group {{"layout":{{"type":"constrained"}}}} -->
+<div class="wp-block-group">
+<!-- wp:columns -->
+<div class="wp-block-columns">
+<!-- wp:column {{"className":"is-style-narrow is-style-fs-column-narrow"}} -->
+<div class="wp-block-column is-style-narrow is-style-fs-column-narrow">
+{inner_content.rstrip()}
+</div>
+<!-- /wp:column -->
+</div>
+<!-- /wp:columns -->
+</div>
+<!-- /wp:group -->
+"""
     
     def _escape_html(self, text):
         """Escape HTML characters in text."""
