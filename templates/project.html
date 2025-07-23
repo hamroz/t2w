@@ -92,20 +92,26 @@
         
         function switchTab(tabName) {
             // Hide all tab contents
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
             });
             
-            // Remove active class from all tab buttons
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.classList.remove('active');
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
             });
             
-            // Show selected tab content
-            document.getElementById(tabName + '-tab').classList.add('active');
-            
-            // Mark selected tab button as active
-            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            // Show selected tab
+            if (tabName === 'extraction') {
+                document.getElementById('extraction-tab').classList.add('active');
+                document.querySelector('[onclick="switchTab(\'extraction\')"]').classList.add('active');
+            } else if (tabName === 'wordpress') {
+                document.getElementById('wordpress-tab').classList.add('active');
+                document.querySelector('[onclick="switchTab(\'wordpress\')"]').classList.add('active');
+            } else if (tabName === 'images') {
+                document.getElementById('images-tab').classList.add('active');
+                document.querySelector('[onclick="switchTab(\'images\')"]').classList.add('active');
+            }
         }
         
         // Initialize first tab as active
@@ -133,6 +139,7 @@
         <div class="project-tabs">
             <button class="tab-button active" onclick="switchTab('extraction')">📁 Extraction & Parsing</button>
             <button class="tab-button" onclick="switchTab('wordpress')">🚀 WordPress Migration</button>
+            <button class="tab-button" onclick="switchTab('images')">🖼️ Image Management</button>
         </div>
         
         <!-- Extraction & Parsing Tab -->
@@ -234,13 +241,29 @@
         
         <!-- WordPress Migration Tab -->
         <div id="wordpress-tab" class="tab-content">
-            <div style="text-align: center; padding: 2em;">
-                <h2>🚀 WordPress Migration</h2>
-                <p>Ready to migrate your parsed content to WordPress?</p>
-                <a href="{{ url_for('wordpress_migration', project_name=project_name) }}" 
-                   style="display: inline-block; background: #007bff; color: white; padding: 12px 24px; border-radius: 5px; text-decoration: none; font-weight: 600;">
-                    Go to WordPress Migration →
-                </a>
+            <div class="upload-section" style="border: none; padding: 0;">
+                <h2>WordPress Migration</h2>
+                <p>Migrate your parsed content to WordPress with advanced options.</p>
+                <a href="{{ url_for('wordpress_migration', project_name=project_name) }}" class="btn-parse">🚀 Go to WordPress Migration</a>
+            </div>
+        </div>
+        
+        <!-- Image Management Tab -->
+        <div id="images-tab" class="tab-content">
+            <div class="upload-section" style="border: none; padding: 0;">
+                <h2>Featured Image Management</h2>
+                <p>Upload images and assign them as featured images to your migrated WordPress pages.</p>
+                <a href="{{ url_for('image_management', project_name=project_name) }}" class="btn-parse">🖼️ Manage Featured Images</a>
+                
+                <div style="margin-top: 1.5em; padding: 1em; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
+                    <h4 style="margin-top: 0; color: #856404;">💡 How it works:</h4>
+                    <ol style="color: #856404; line-height: 1.6;">
+                        <li><strong>Upload Images:</strong> Add your images to the project</li>
+                        <li><strong>Smart Matching:</strong> AI suggests which image belongs to which page</li>
+                        <li><strong>Quick Assignment:</strong> Review and assign images with one click</li>
+                        <li><strong>Bulk Processing:</strong> Upload to WordPress and assign featured images efficiently</li>
+                    </ol>
+                </div>
             </div>
         </div>
     </div>

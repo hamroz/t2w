@@ -11,6 +11,7 @@ from parser import parse_tilda_export
 from migration import MigrationManager
 from progress_tracker import ProgressTracker
 import time
+from image_manager import ImageManager
 
 # Define allowed file extensions
 ALLOWED_EXTENSIONS = {'zip'}
@@ -446,6 +447,7 @@ def start_wordpress_migration(project_name):
     wp_site_url = request.form.get('wp_site_url', '').strip()
     wp_username = request.form.get('wp_username', '').strip()
     wp_password = request.form.get('wp_password', '').strip()
+    page_template = request.form.get('page_template', '')
     
     if not all([wp_site_url, wp_username, wp_password]):
         return jsonify({'success': False, 'message': 'All WordPress fields are required'})
@@ -462,7 +464,11 @@ def start_wordpress_migration(project_name):
         def run_migration():
             try:
                 active_migrations[project_name] = migration_manager
-                result = migration_manager.start_migration()
+                
+                # Prepare migration config
+                migration_config = {'page_template': page_template}
+                
+                result = migration_manager.start_migration(migration_config)
                 # Keep migration manager available for progress tracking
                 if not result['success']:
                     # Remove from active migrations if failed to start
@@ -599,6 +605,260 @@ def migration_log_stream(project_name):
                 break
     
     return Response(generate(), mimetype='text/event-stream')
+
+@app.route('/project/<project_name>/images')
+def image_management(project_name):
+    """Image management page for assigning featured images to pages."""
+    project_path = get_secure_project_path(project_name)
+    if not project_path:
+        flash(f"Project '{project_name}' not found.", 'error')
+        return redirect(url_for('index'))
+    
+    return render_template('image_management.html', 
+                         project_name=project_name)
+
+@app.route('/project/<project_name>/images/upload', methods=['POST'])
+def upload_images(project_name):
+    """Handle image file uploads to project's images directory."""
+    project_path = get_secure_project_path(project_name)
+    if not project_path:
+        return jsonify({'success': False, 'message': 'Project not found'})
+    
+    if 'images' not in request.files:
+        return jsonify({'success': False, 'message': 'No images provided'})
+    
+    files = request.files.getlist('images')
+    if not files or all(f.filename == '' for f in files):
+        return jsonify({'success': False, 'message': 'No files selected'})
+    
+    # Create images directory
+    images_dir = os.path.join(project_path, 'images')
+    os.makedirs(images_dir, exist_ok=True)
+    
+    uploaded_files = []
+    errors = []
+    
+    allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'}
+    
+    for file in files:
+        if file.filename:
+            filename = secure_filename(file.filename)
+            if filename:
+                _, ext = os.path.splitext(filename.lower())
+                if ext in allowed_extensions:
+                    file_path = os.path.join(images_dir, filename)
+                    try:
+                        file.save(file_path)
+                        file_size = os.path.getsize(file_path)
+                        uploaded_files.append({
+                            'filename': filename,
+                            'size': file_size,
+                            'size_human': _human_size(file_size)
+                        })
+                    except Exception as e:
+                        errors.append(f"Failed to save {filename}: {str(e)}")
+                else:
+                    errors.append(f"Invalid file type: {filename}")
+    
+    return jsonify({
+        'success': len(uploaded_files) > 0,
+        'uploaded_files': uploaded_files,
+        'errors': errors,
+        'message': f"Uploaded {len(uploaded_files)} files" + (f", {len(errors)} errors" if errors else "")
+    })
+
+@app.route('/project/<project_name>/images/list')
+def list_images(project_name):
+    """Get list of images in project's images directory."""
+    project_path = get_secure_project_path(project_name)
+    if not project_path:
+        return jsonify({'success': False, 'message': 'Project not found'})
+    
+    try:
+        # Get WordPress credentials from request if available
+        wp_site_url = request.args.get('wp_site_url', '')
+        wp_username = request.args.get('wp_username', '')
+        wp_password = request.args.get('wp_password', '')
+        
+        if all([wp_site_url, wp_username, wp_password]):
+            # Initialize image manager and get both local and WordPress data
+            image_manager = ImageManager(project_path, wp_site_url, wp_username, wp_password)
+            
+            local_images = image_manager.get_local_images()
+            wp_pages = image_manager.get_wordpress_pages()
+            saved_assignments = image_manager.load_assignments()
+            
+            return jsonify({
+                'success': True,
+                'local_images': local_images,
+                'wp_pages': wp_pages,
+                'saved_assignments': saved_assignments
+            })
+        else:
+            # Just get local images
+            images_dir = os.path.join(project_path, 'images')
+            if not os.path.exists(images_dir):
+                return jsonify({'success': True, 'local_images': []})
+            
+            image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'}
+            images = []
+            
+            for filename in os.listdir(images_dir):
+                file_path = os.path.join(images_dir, filename)
+                if os.path.isfile(file_path):
+                    _, ext = os.path.splitext(filename.lower())
+                    if ext in image_extensions:
+                        file_size = os.path.getsize(file_path)
+                        images.append({
+                            'filename': filename,
+                            'path': file_path,
+                            'size': file_size,
+                            'size_human': _human_size(file_size)
+                        })
+            
+            return jsonify({
+                'success': True,
+                'local_images': sorted(images, key=lambda x: x['filename'])
+            })
+            
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/project/<project_name>/images/bulk-upload-to-wp', methods=['POST'])
+def bulk_upload_to_wordpress(project_name):
+    """Upload selected images to WordPress media library."""
+    project_path = get_secure_project_path(project_name)
+    if not project_path:
+        return jsonify({'success': False, 'message': 'Project not found'})
+    
+    wp_site_url = request.form.get('wp_site_url', '').strip()
+    wp_username = request.form.get('wp_username', '').strip()
+    wp_password = request.form.get('wp_password', '').strip()
+    selected_images = request.form.getlist('selected_images')
+    
+    if not all([wp_site_url, wp_username, wp_password]):
+        return jsonify({'success': False, 'message': 'WordPress credentials required'})
+    
+    if not selected_images:
+        return jsonify({'success': False, 'message': 'No images selected'})
+    
+    try:
+        image_manager = ImageManager(project_path, wp_site_url, wp_username, wp_password)
+        
+        # Get full paths for selected images
+        images_dir = os.path.join(project_path, 'images')
+        image_paths = [os.path.join(images_dir, filename) for filename in selected_images]
+        
+        # Filter out non-existent files
+        existing_paths = [path for path in image_paths if os.path.exists(path)]
+        
+        if not existing_paths:
+            return jsonify({'success': False, 'message': 'No valid image files found'})
+        
+        # Start upload in background
+        def upload_progress(current, total, operation):
+            pass  # We'll implement SSE for this later if needed
+        
+        results = image_manager.upload_images_bulk(existing_paths, upload_progress)
+        
+        # Count successes and failures
+        successful = sum(1 for r in results if r['result']['success'])
+        failed = len(results) - successful
+        
+        return jsonify({
+            'success': successful > 0,
+            'results': results,
+            'summary': {
+                'total': len(results),
+                'successful': successful,
+                'failed': failed
+            },
+            'message': f"Uploaded {successful}/{len(results)} images successfully"
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/project/<project_name>/images/save-assignments', methods=['POST'])
+def save_image_assignments(project_name):
+    """Save image-page assignments."""
+    project_path = get_secure_project_path(project_name)
+    if not project_path:
+        return jsonify({'success': False, 'message': 'Project not found'})
+    
+    try:
+        assignments = request.get_json()
+        if not assignments:
+            return jsonify({'success': False, 'message': 'No assignments provided'})
+        
+        # Create a simple image manager instance to save assignments
+        assignments_file = os.path.join(project_path, 'image_assignments.json')
+        with open(assignments_file, 'w', encoding='utf-8') as f:
+            json.dump(assignments, f, indent=2, ensure_ascii=False)
+        
+        return jsonify({
+            'success': True,
+            'message': f"Saved {len(assignments)} assignments"
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/project/<project_name>/images/assign-featured', methods=['POST'])
+def assign_featured_images(project_name):
+    """Assign featured images to pages based on saved assignments."""
+    project_path = get_secure_project_path(project_name)
+    if not project_path:
+        return jsonify({'success': False, 'message': 'Project not found'})
+    
+    wp_site_url = request.form.get('wp_site_url', '').strip()
+    wp_username = request.form.get('wp_username', '').strip()
+    wp_password = request.form.get('wp_password', '').strip()
+    
+    if not all([wp_site_url, wp_username, wp_password]):
+        return jsonify({'success': False, 'message': 'WordPress credentials required'})
+    
+    try:
+        image_manager = ImageManager(project_path, wp_site_url, wp_username, wp_password)
+        assignments = image_manager.load_assignments()
+        
+        if not assignments:
+            return jsonify({'success': False, 'message': 'No assignments found'})
+        
+        # Start assignment process
+        def assignment_progress(current, total, operation):
+            pass  # We'll implement SSE for this later if needed
+        
+        results = image_manager.assign_featured_images(assignments, assignment_progress)
+        
+        # Count successes and failures
+        successful = sum(1 for r in results if r['result']['success'])
+        failed = len(results) - successful
+        
+        return jsonify({
+            'success': successful > 0,
+            'results': results,
+            'summary': {
+                'total': len(results),
+                'successful': successful,
+                'failed': failed
+            },
+            'message': f"Assigned {successful}/{len(results)} featured images successfully"
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+def _human_size(size_bytes):
+    """Convert bytes to human readable format."""
+    if size_bytes == 0:
+        return "0B"
+    size_names = ["B", "KB", "MB", "GB"]
+    i = 0
+    while size_bytes >= 1024.0 and i < len(size_names) - 1:
+        size_bytes /= 1024.0
+        i += 1
+    return f"{size_bytes:.1f}{size_names[i]}"
 
 if __name__ == "__main__":
     app.run(debug=True) 

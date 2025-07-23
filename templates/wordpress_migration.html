@@ -299,6 +299,18 @@
             <div class="section">
                 <h3>🎯 Migration Options</h3>
                 
+                <div class="form-group">
+                    <label for="page_template">Page Template</label>
+                    <select id="page_template" name="page_template" class="form-group" style="width: 100%; padding: 0.75em; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px;">
+                        <option value="">Default Template</option>
+                        <option value="page-wide.php">Wide Template</option>
+                        <option value="page-blank.php">Blank Template</option>
+                    </select>
+                    <small style="color: #6c757d; font-size: 0.8em;">
+                        Select the template from your theme to apply to all migrated pages.
+                    </small>
+                </div>
+
                 <div style="margin-bottom: 1.5em;">
                     <h4>Migration Settings:</h4>
                     <ul style="color: #6c757d; font-size: 0.9em; line-height: 1.6;">
@@ -425,6 +437,7 @@
             formData.append('wp_site_url', document.getElementById('wp_site_url').value);
             formData.append('wp_username', document.getElementById('wp_username').value);
             formData.append('wp_password', document.getElementById('wp_password').value);
+            formData.append('page_template', document.getElementById('page_template').value);
             
             // Show progress section
             document.getElementById('progress-section').classList.add('active');

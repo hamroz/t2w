@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Management - {{ project_name }}</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            line-height: 1.6; 
+            margin: 2em; 
+            background-color: #f4f4f4; 
+        }
+        
+        .container { 
+            max-width: 1600px; 
+            margin: auto; 
+            background: #fff; 
+            padding: 2em; 
+            border-radius: 8px; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.1); 
+        }
+        
+        h1, h2, h3 { color: #333; }
+        
+        a { 
+            color: #007bff; 
+            text-decoration: none; 
+        }
+        
+        a:hover { 
+            text-decoration: underline; 
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1.5em;
+            font-weight: 600;
+        }
+        
+        .workflow-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2em;
+            padding: 1em;
+            background: #e7f3ff;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .step {
+            text-align: center;
+            flex: 1;
+            position: relative;
+        }
+        
+        .step:not(:last-child)::after {
+            content: '→';
+            position: absolute;
+            right: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #007bff;
+            font-weight: bold;
+        }
+        
+        .step-number {
+            background: #007bff;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-bottom: 0.5em;
+        }
+        
+        .step-title {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .main-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr 400px;
+            gap: 2em;
+            margin-bottom: 2em;
+            min-height: 600px;
+        }
+        
+        .sidebar {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5em;
+        }
+        
+        .sidebar h3 {
+            margin-top: 0;
+            color: #495057;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 0.5em;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 0.75em;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 1em;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+        
+        .upload-zone {
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            padding: 1.5em;
+            text-align: center;
+            margin-bottom: 1em;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-zone.dragover {
+            background: #e7f3ff;
+            border-color: #0056b3;
+        }
+        
+        .upload-zone input[type="file"] {
+            display: none;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.5em 1em;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary { background: #007bff; color: white; }
+        .btn-primary:hover { background: #0056b3; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #1e7e34; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #545b62; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .form-group {
+            margin-bottom: 1em;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5em;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.75em;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+        
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 0.5em;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 1em;
+        }
+        
+        .image-item {
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 0.5em;
+            text-align: center;
+            background: white;
+            transition: all 0.3s ease;
+            cursor: grab;
+        }
+        
+        .image-item:hover {
+            border-color: #007bff;
+            box-shadow: 0 2px 8px rgba(0,123,255,0.15);
+        }
+        
+        .image-item.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+        
+        .image-item img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 0.25em;
+        }
+        
+        .image-filename {
+            font-size: 0.7em;
+            color: #495057;
+            word-break: break-word;
+        }
+        
+        .main-content {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5em;
+            position: relative;
+        }
+        
+        .main-content h3 {
+            margin-top: 0;
+            color: #495057;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 0.5em;
+        }
+        
+        .assignment-area {
+            background: white;
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            padding: 2em;
+            text-align: center;
+            margin-top: 1em;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            transition: all 0.3s ease;
+        }
+        
+        .assignment-area.dragover {
+            background: #e7f3ff;
+            border-color: #0056b3;
+            color: #007bff;
+        }
+        
+        .assignment-area.has-assignment {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        
+        .pages-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .page-item {
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 1em;
+            margin-bottom: 0.5em;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .page-item:hover {
+            border-color: #007bff;
+            box-shadow: 0 2px 8px rgba(0,123,255,0.15);
+        }
+        
+        .page-item.selected {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+        
+        .page-item.has-image {
+            border-left: 4px solid #28a745;
+        }
+        
+        .page-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.25em;
+        }
+        
+        .page-slug {
+            font-size: 0.8em;
+            color: #6c757d;
+            font-family: monospace;
+            margin-bottom: 0.25em;
+        }
+        
+        .page-status {
+            font-size: 0.7em;
+            padding: 0.2em 0.5em;
+            border-radius: 10px;
+            background: #e9ecef;
+            color: #495057;
+        }
+        
+        .page-status.has-featured {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .assigned-image {
+            margin-top: 0.5em;
+            display: flex;
+            align-items: center;
+            gap: 0.5em;
+            padding: 0.5em;
+            background: #e7f3ff;
+            border-radius: 4px;
+        }
+        
+        .assigned-image img {
+            width: 30px;
+            height: 30px;
+            object-fit: cover;
+            border-radius: 3px;
+        }
+        
+        .assigned-image-name {
+            font-size: 0.8em;
+            color: #007bff;
+            font-weight: 500;
+        }
+        
+        .remove-assignment {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 0.2em 0.4em;
+            font-size: 0.7em;
+            cursor: pointer;
+            margin-left: auto;
+        }
+        
+        .remove-assignment:hover {
+            background: #c82333;
+        }
+        
+        .bulk-actions {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5em;
+            margin-top: 2em;
+        }
+        
+        .bulk-actions h3 {
+            margin-top: 0;
+            color: #495057;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 0.5em;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 2em;
+            margin-bottom: 1em;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .stat-label {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+        
+        .progress-section {
+            display: none;
+            margin-top: 2em;
+            padding: 1.5em;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .progress-section.active {
+            display: block;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 24px;
+            background: #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 1em 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .status-message {
+            font-weight: 600;
+            color: #495057;
+            margin-top: 0.5em;
+        }
+        
+        .messages {
+            margin: 1em 0;
+            padding: 0;
+        }
+        
+        .messages li {
+            list-style: none;
+            padding: 0.75em;
+            border-radius: 4px;
+            margin-bottom: 0.5em;
+        }
+        
+        .messages .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .messages .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .messages .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .messages .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        
+        .quick-tips {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 1em;
+            margin-bottom: 1em;
+        }
+        
+        .quick-tips h4 {
+            margin-top: 0;
+            color: #856404;
+        }
+        
+        .quick-tips ul {
+            margin: 0;
+            color: #856404;
+        }
+        
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 250px 1fr 300px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body { margin: 1rem; }
+            .container { padding: 1rem; }
+            .main-layout { 
+                grid-template-columns: 1fr; 
+                gap: 1em;
+            }
+            .workflow-steps { flex-direction: column; gap: 1em; }
+            .step:not(:last-child)::after { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('project_view', project_name=project_name) }}" class="back-link">
+            ← Back to Project
+        </a>
+        
+        <h1>🖼️ Featured Image Management - {{ project_name }}</h1>
+        
+        <!-- Workflow Steps -->
+        <div class="workflow-steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-title">Upload Images</div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-title">Connect WordPress</div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-title">Drag & Assign</div>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-title">Bulk Process</div>
+            </div>
+        </div>
+        
+        <!-- Quick Tips -->
+        <div class="quick-tips">
+            <h4>💡 Quick Assignment Tips:</h4>
+            <ul>
+                <li><strong>Drag & Drop:</strong> Drag images onto pages or the assignment area</li>
+                <li><strong>Search:</strong> Use search boxes to quickly find pages and images</li>
+                <li><strong>Click Pages:</strong> Click a page, then click an image to assign</li>
+                <li><strong>Visual Feedback:</strong> Green border = has assignment, blue = selected</li>
+            </ul>
+        </div>
+        
+        <!-- Messages -->
+        <ul id="messages" class="messages"></ul>
+        
+        <div class="main-layout">
+            <!-- Images Sidebar -->
+            <div class="sidebar">
+                <h3>📁 Images</h3>
+                
+                <div class="upload-zone" id="upload-zone">
+                    <p style="margin: 0; color: #6c757d; font-size: 0.9em;">
+                        <strong>Drop images here</strong><br>
+                        or click to browse
+                    </p>
+                    <input type="file" id="image-files" multiple accept="image/*">
+                </div>
+                
+                <button type="button" class="btn btn-primary" style="width: 100%; margin-bottom: 1em;" onclick="document.getElementById('image-files').click()">
+                    📁 Select Images
+                </button>
+                
+                <input type="text" id="image-search" class="search-box" placeholder="🔍 Search images...">
+                
+                <div style="font-size: 0.9em; color: #6c757d; margin-bottom: 0.5em;">
+                    <span id="local-count">0</span> images
+                </div>
+                
+                <div class="image-grid" id="local-images-grid"></div>
+            </div>
+            
+            <!-- Main Assignment Area -->
+            <div class="main-content">
+                <h3>🎯 Assignment Area</h3>
+                
+                <!-- WordPress Connection Form -->
+                <div id="wp-config-section">
+                    <form id="wp-config-form" style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1em; align-items: end; margin-bottom: 1em;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="wp_site_url">WordPress URL</label>
+                            <input type="url" id="wp_site_url" name="wp_site_url" placeholder="https://yoursite.com" required>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="wp_username">Username</label>
+                            <input type="text" id="wp_username" name="wp_username" placeholder="admin" required>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="wp_password">App Password</label>
+                            <input type="password" id="wp_password" name="wp_password" placeholder="xxxx xxxx xxxx xxxx" required>
+                        </div>
+                        
+                        <button type="button" id="load-data-btn" class="btn btn-primary">
+                            🔄 Load Pages
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Assignment Instructions -->
+                <div class="assignment-area" id="assignment-area">
+                    <div>
+                        <h4 style="margin: 0; color: #6c757d;">Select a page from the right, then drag an image here</h4>
+                        <p style="margin: 0.5em 0 0 0; font-size: 0.9em;">Or drag an image directly onto a page</p>
+                    </div>
+                </div>
+                
+                <!-- Selected Page Info -->
+                <div id="selected-page-info" style="display: none; margin-top: 1em; padding: 1em; background: #e7f3ff; border-radius: 4px;">
+                    <h4 style="margin: 0; color: #007bff;">Selected Page:</h4>
+                    <div id="selected-page-details"></div>
+                </div>
+            </div>
+            
+            <!-- Pages Sidebar -->
+            <div class="sidebar">
+                <h3>📄 WordPress Pages</h3>
+                
+                <input type="text" id="page-search" class="search-box" placeholder="🔍 Search pages...">
+                
+                <div style="font-size: 0.9em; color: #6c757d; margin-bottom: 0.5em;">
+                    <span id="pages-count">0</span> pages | <span id="assigned-count">0</span> assigned
+                </div>
+                
+                <div class="pages-list" id="pages-list">
+                    <div style="text-align: center; color: #6c757d; padding: 2em;">
+                        Connect to WordPress to load pages
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bulk Actions -->
+        <div class="bulk-actions" id="bulk-actions" style="display: none;">
+            <h3>🚀 Bulk Actions</h3>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="stat-total-images">0</div>
+                    <div class="stat-label">Images</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="stat-total-pages">0</div>
+                    <div class="stat-label">Pages</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="stat-assignments">0</div>
+                    <div class="stat-label">Assignments</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1em; margin-bottom: 1em;">
+                <button type="button" id="save-assignments-btn" class="btn btn-primary">
+                    💾 Save Assignments
+                </button>
+                <button type="button" id="bulk-upload-btn" class="btn btn-primary">
+                    ⬆️ Upload Images to WordPress
+                </button>
+                <button type="button" id="assign-featured-btn" class="btn btn-success">
+                    🖼️ Assign Featured Images
+                </button>
+                <button type="button" id="clear-all-btn" class="btn btn-secondary">
+                    🗑️ Clear All
+                </button>
+            </div>
+        </div>
+        
+        <!-- Progress Section -->
+        <div class="progress-section" id="progress-section">
+            <h3>📈 Processing...</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill">0%</div>
+            </div>
+            <div class="status-message" id="status-message">Preparing...</div>
+        </div>
+    </div>
+    
+    <script>
+        let localImages = [];
+        let wpPages = [];
+        let assignments = {};
+        let uploadedMedia = {};
+        let selectedPageId = null;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadLocalImages();
+            setupDragAndDrop();
+            setupEventListeners();
+            setupSearch();
+        });
+        
+        function setupDragAndDrop() {
+            const uploadZone = document.getElementById('upload-zone');
+            const assignmentArea = document.getElementById('assignment-area');
+            
+            // Upload zone drag & drop
+            uploadZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+            
+            uploadZone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+            });
+            
+            uploadZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                handleImageUpload(files);
+            });
+            
+            uploadZone.addEventListener('click', function() {
+                document.getElementById('image-files').click();
+            });
+            
+            // Assignment area drag & drop
+            assignmentArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                assignmentArea.classList.add('dragover');
+            });
+            
+            assignmentArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                assignmentArea.classList.remove('dragover');
+            });
+            
+            assignmentArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                assignmentArea.classList.remove('dragover');
+                
+                const imageFilename = e.dataTransfer.getData('text/plain');
+                if (selectedPageId && imageFilename) {
+                    assignImageToPage(selectedPageId, imageFilename);
+                }
+            });
+        }
+        
+        function setupEventListeners() {
+            document.getElementById('image-files').addEventListener('change', function(e) {
+                handleImageUpload(e.target.files);
+            });
+            
+            document.getElementById('load-data-btn').addEventListener('click', loadWordPressData);
+            document.getElementById('save-assignments-btn').addEventListener('click', saveAssignments);
+            document.getElementById('clear-all-btn').addEventListener('click', clearAllAssignments);
+            document.getElementById('bulk-upload-btn').addEventListener('click', bulkUploadToWordPress);
+            document.getElementById('assign-featured-btn').addEventListener('click', assignFeaturedImages);
+        }
+        
+        function setupSearch() {
+            document.getElementById('image-search').addEventListener('input', function(e) {
+                filterImages(e.target.value);
+            });
+            
+            document.getElementById('page-search').addEventListener('input', function(e) {
+                filterPages(e.target.value);
+            });
+        }
+        
+        function loadLocalImages() {
+            fetch(`/project/{{ project_name }}/images/list`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        localImages = data.local_images || [];
+                        updateLocalImagesDisplay();
+                        updateStats();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading local images:', error);
+                });
+        }
+        
+        function handleImageUpload(files) {
+            const formData = new FormData();
+            
+            for (let file of files) {
+                if (file.type.startsWith('image/')) {
+                    formData.append('images', file);
+                }
+            }
+            
+            if (formData.has('images')) {
+                showProgress('Uploading images...', 0);
+                
+                fetch(`/project/{{ project_name }}/images/upload`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideProgress();
+                    if (data.success) {
+                        showMessage(data.message, 'success');
+                        loadLocalImages();
+                    } else {
+                        showMessage(data.message, 'error');
+                    }
+                    
+                    if (data.errors && data.errors.length > 0) {
+                        data.errors.forEach(error => showMessage(error, 'warning'));
+                    }
+                })
+                .catch(error => {
+                    hideProgress();
+                    showMessage('Upload failed: ' + error.message, 'error');
+                });
+            }
+        }
+        
+        function loadWordPressData() {
+            const siteUrl = document.getElementById('wp_site_url').value;
+            const username = document.getElementById('wp_username').value;
+            const password = document.getElementById('wp_password').value;
+            
+            if (!siteUrl || !username || !password) {
+                showMessage('Please fill in all WordPress credentials', 'error');
+                return;
+            }
+            
+            showProgress('Loading WordPress pages...', 50);
+            
+            const params = new URLSearchParams({
+                wp_site_url: siteUrl,
+                wp_username: username,
+                wp_password: password
+            });
+            
+            fetch(`/project/{{ project_name }}/images/list?${params}`)
+                .then(response => response.json())
+                .then(data => {
+                    hideProgress();
+                    if (data.success) {
+                        wpPages = data.wp_pages || [];
+                        assignments = data.saved_assignments || {};
+                        
+                        updatePagesDisplay();
+                        updateStats();
+                        
+                        document.getElementById('bulk-actions').style.display = 'block';
+                        
+                        showMessage(`Loaded ${wpPages.length} WordPress pages`, 'success');
+                    } else {
+                        showMessage('Failed to load WordPress data: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    hideProgress();
+                    showMessage('Error loading WordPress data: ' + error.message, 'error');
+                });
+        }
+        
+        function updateLocalImagesDisplay() {
+            const grid = document.getElementById('local-images-grid');
+            const count = document.getElementById('local-count');
+            
+            count.textContent = localImages.length;
+            grid.innerHTML = '';
+            
+            localImages.forEach(image => {
+                const item = document.createElement('div');
+                item.className = 'image-item';
+                item.draggable = true;
+                item.dataset.filename = image.filename;
+                
+                item.addEventListener('dragstart', function(e) {
+                    e.dataTransfer.setData('text/plain', image.filename);
+                    item.classList.add('dragging');
+                });
+                
+                item.addEventListener('dragend', function(e) {
+                    item.classList.remove('dragging');
+                });
+                
+                item.addEventListener('click', function() {
+                    if (selectedPageId) {
+                        assignImageToPage(selectedPageId, image.filename);
+                    } else {
+                        showMessage('Please select a page first', 'warning');
+                    }
+                });
+                
+                item.innerHTML = `
+                    <img src="/project/{{ project_name }}/images/${image.filename}" alt="${image.filename}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRjhGOUZBIi8+CjxwYXRoIGQ9Ik0zMCAzN0MzMi40ODUzIDM3IDM0LjUgMzQuOTg1MyAzNC41IDMyLjVDMzQuNSAzMC4wMTQ3IDMyLjQ4NTMgMjggMzAgMjhDMjcuNTE0NyAyOCAyNS41IDMwLjAxNDcgMjUuNSAzMi41QzI1LjUgMzQuOTg1MyAyNy41MTQ3IDM3IDMwIDM3WiIgZmlsbD0iI0RFRTJFNiIvPgo8cGF0aCBkPSJNMjEgNDJMMzAgMzNMMjEgNDJaIiBmaWxsPSIjREVFMkU2Ii8+Cjwvc3ZnPg=='">
+                    <div class="image-filename">${image.filename}</div>
+                `;
+                grid.appendChild(item);
+            });
+        }
+        
+        function updatePagesDisplay() {
+            const pagesList = document.getElementById('pages-list');
+            const count = document.getElementById('pages-count');
+            const assignedCount = document.getElementById('assigned-count');
+            
+            count.textContent = wpPages.length;
+            assignedCount.textContent = Object.keys(assignments).length;
+            pagesList.innerHTML = '';
+            
+            wpPages.forEach(page => {
+                const hasAssignment = assignments[page.id];
+                const hasFeaturedImage = page.featured_media > 0;
+                
+                const item = document.createElement('div');
+                item.className = `page-item ${hasAssignment ? 'has-image' : ''}`;
+                item.dataset.pageId = page.id;
+                item.dataset.title = page.title.rendered.toLowerCase();
+                item.dataset.slug = page.slug.toLowerCase();
+                
+                item.addEventListener('click', function() {
+                    selectPage(page.id, page);
+                });
+                
+                // Enable drag & drop for pages
+                item.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    item.style.background = '#e7f3ff';
+                });
+                
+                item.addEventListener('dragleave', function(e) {
+                    e.preventDefault();
+                    item.style.background = '';
+                });
+                
+                item.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    item.style.background = '';
+                    
+                    const imageFilename = e.dataTransfer.getData('text/plain');
+                    if (imageFilename) {
+                        assignImageToPage(page.id, imageFilename);
+                    }
+                });
+                
+                let assignmentHtml = '';
+                if (hasAssignment) {
+                    assignmentHtml = `
+                        <div class="assigned-image">
+                            <img src="/project/{{ project_name }}/images/${hasAssignment}" alt="${hasAssignment}">
+                            <span class="assigned-image-name">${hasAssignment}</span>
+                            <button class="remove-assignment" onclick="removeAssignment(${page.id})">×</button>
+                        </div>
+                    `;
+                }
+                
+                item.innerHTML = `
+                    <div class="page-title">${page.title.rendered}</div>
+                    <div class="page-slug">${page.slug}</div>
+                    <div class="page-status ${hasFeaturedImage ? 'has-featured' : ''}">
+                        ${hasFeaturedImage ? '✓ Has featured image' : 'No featured image'}
+                    </div>
+                    ${assignmentHtml}
+                `;
+                
+                pagesList.appendChild(item);
+            });
+        }
+        
+        function selectPage(pageId, pageData) {
+            selectedPageId = pageId;
+            
+            // Update UI
+            document.querySelectorAll('.page-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            document.querySelector(`[data-page-id="${pageId}"]`).classList.add('selected');
+            
+            // Update assignment area
+            const assignmentArea = document.getElementById('assignment-area');
+            const selectedPageInfo = document.getElementById('selected-page-info');
+            const selectedPageDetails = document.getElementById('selected-page-details');
+            
+            assignmentArea.innerHTML = `
+                <div>
+                    <h4 style="margin: 0; color: #007bff;">Drop image here for: ${pageData.title.rendered}</h4>
+                    <p style="margin: 0.5em 0 0 0; font-size: 0.9em;">Or click an image to assign</p>
+                </div>
+            `;
+            
+            selectedPageInfo.style.display = 'block';
+            selectedPageDetails.innerHTML = `
+                <strong>${pageData.title.rendered}</strong><br>
+                <span style="color: #6c757d;">${pageData.slug}</span>
+            `;
+        }
+        
+        function assignImageToPage(pageId, filename) {
+            assignments[pageId] = filename;
+            updatePagesDisplay();
+            updateStats();
+            
+            // Show success
+            const page = wpPages.find(p => p.id == pageId);
+            if (page) {
+                showMessage(`Assigned "${filename}" to "${page.title.rendered}"`, 'success');
+            }
+        }
+        
+        function removeAssignment(pageId) {
+            delete assignments[pageId];
+            updatePagesDisplay();
+            updateStats();
+            showMessage('Assignment removed', 'info');
+        }
+        
+        function filterImages(searchTerm) {
+            const items = document.querySelectorAll('.image-item');
+            
+            items.forEach(item => {
+                const filename = item.dataset.filename.toLowerCase();
+                if (filename.includes(searchTerm.toLowerCase())) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+        
+        function filterPages(searchTerm) {
+            const items = document.querySelectorAll('.page-item');
+            
+            items.forEach(item => {
+                const title = item.dataset.title || '';
+                const slug = item.dataset.slug || '';
+                
+                if (title.includes(searchTerm.toLowerCase()) || slug.includes(searchTerm.toLowerCase())) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+        
+        function clearAllAssignments() {
+            assignments = {};
+            selectedPageId = null;
+            updatePagesDisplay();
+            updateStats();
+            
+            document.getElementById('assignment-area').innerHTML = `
+                <div>
+                    <h4 style="margin: 0; color: #6c757d;">Select a page from the right, then drag an image here</h4>
+                    <p style="margin: 0.5em 0 0 0; font-size: 0.9em;">Or drag an image directly onto a page</p>
+                </div>
+            `;
+            document.getElementById('selected-page-info').style.display = 'none';
+            
+            showMessage('All assignments cleared', 'info');
+        }
+        
+        function saveAssignments() {
+            fetch(`/project/{{ project_name }}/images/save-assignments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(assignments)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                } else {
+                    showMessage('Failed to save assignments: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showMessage('Error saving assignments: ' + error.message, 'error');
+            });
+        }
+        
+        function bulkUploadToWordPress() {
+            const assignedImages = Object.values(assignments);
+            if (assignedImages.length === 0) {
+                showMessage('No images assigned to upload', 'warning');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('wp_site_url', document.getElementById('wp_site_url').value);
+            formData.append('wp_username', document.getElementById('wp_username').value);
+            formData.append('wp_password', document.getElementById('wp_password').value);
+            
+            assignedImages.forEach(filename => {
+                formData.append('selected_images', filename);
+            });
+            
+            showProgress('Uploading images to WordPress...', 0);
+            
+            fetch(`/project/{{ project_name }}/images/bulk-upload-to-wp`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideProgress();
+                if (data.success) {
+                    // Store uploaded media info
+                    data.results.forEach(result => {
+                        if (result.result.success) {
+                            uploadedMedia[result.filename] = result.result.media_id;
+                        }
+                    });
+                    
+                    showMessage(`${data.summary.successful}/${data.summary.total} images uploaded successfully`, 'success');
+                    
+                    if (data.summary.failed > 0) {
+                        showMessage(`${data.summary.failed} images failed to upload`, 'warning');
+                    }
+                } else {
+                    showMessage('Upload failed: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                hideProgress();
+                showMessage('Upload error: ' + error.message, 'error');
+            });
+        }
+        
+        function assignFeaturedImages() {
+            const mediaAssignments = {};
+            
+            // Convert filename assignments to media ID assignments
+            Object.entries(assignments).forEach(([pageId, filename]) => {
+                if (uploadedMedia[filename]) {
+                    mediaAssignments[pageId] = uploadedMedia[filename];
+                }
+            });
+            
+            if (Object.keys(mediaAssignments).length === 0) {
+                showMessage('No uploaded images to assign. Please upload images first.', 'warning');
+                return;
+            }
+            
+            // Save the media assignments temporarily
+            assignments = mediaAssignments;
+            
+            const formData = new FormData();
+            formData.append('wp_site_url', document.getElementById('wp_site_url').value);
+            formData.append('wp_username', document.getElementById('wp_username').value);
+            formData.append('wp_password', document.getElementById('wp_password').value);
+            
+            showProgress('Assigning featured images...', 0);
+            
+            fetch(`/project/{{ project_name }}/images/assign-featured`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideProgress();
+                if (data.success) {
+                    showMessage(`${data.summary.successful}/${data.summary.total} featured images assigned successfully`, 'success');
+                    
+                    if (data.summary.failed > 0) {
+                        showMessage(`${data.summary.failed} assignments failed`, 'warning');
+                    }
+                } else {
+                    showMessage('Assignment failed: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                hideProgress();
+                showMessage('Assignment error: ' + error.message, 'error');
+            });
+        }
+        
+        function updateStats() {
+            document.getElementById('stat-total-images').textContent = localImages.length;
+            document.getElementById('stat-total-pages').textContent = wpPages.length;
+            document.getElementById('stat-assignments').textContent = Object.keys(assignments).length;
+        }
+        
+        function showProgress(message, percentage) {
+            const section = document.getElementById('progress-section');
+            const fill = document.getElementById('progress-fill');
+            const statusMsg = document.getElementById('status-message');
+            
+            section.classList.add('active');
+            fill.style.width = percentage + '%';
+            fill.textContent = percentage + '%';
+            statusMsg.textContent = message;
+        }
+        
+        function hideProgress() {
+            document.getElementById('progress-section').classList.remove('active');
+        }
+        
+        function showMessage(message, type) {
+            const messagesContainer = document.getElementById('messages');
+            const li = document.createElement('li');
+            li.className = type;
+            li.textContent = message;
+            
+            messagesContainer.appendChild(li);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                li.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html> 

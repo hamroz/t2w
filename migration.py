@@ -69,6 +69,9 @@ class MigrationManager:
         # Initialize progress tracker
         self.tracker = ProgressTracker(self.project_path)
         
+        # Get page template from config, default to empty string (WordPress default)
+        page_template = migration_config.get('page_template', '') if migration_config else ''
+        
         try:
             # Load parsed data
             self.tracker.log_operation("Loading parsed data...")
@@ -99,7 +102,7 @@ class MigrationManager:
             
             # Migrate pages (root pages first, then children)
             self.tracker.log_operation("Starting page migration...")
-            self._migrate_pages_hierarchical(root_pages, hierarchy)
+            self._migrate_pages_hierarchical(root_pages, hierarchy, page_template)
             
             # Create menu (optional - WordPress REST API has limited menu support)
             if menu:
@@ -127,27 +130,27 @@ class MigrationManager:
                 'migration_id': self.tracker.migration_id if self.tracker else None
             }
     
-    def _migrate_pages_hierarchical(self, root_pages, hierarchy):
+    def _migrate_pages_hierarchical(self, root_pages, hierarchy, page_template=''):
         """Migrate pages maintaining hierarchy."""
         # First, migrate all root pages
         for page in root_pages:
-            self._migrate_single_page(page)
+            self._migrate_single_page(page, template=page_template)
         
         # Then migrate child pages recursively
         for page in root_pages:
-            self._migrate_children(page['slug'], hierarchy)
+            self._migrate_children(page['slug'], hierarchy, page_template)
     
-    def _migrate_children(self, parent_slug, hierarchy):
+    def _migrate_children(self, parent_slug, hierarchy, page_template=''):
         """Recursively migrate child pages."""
         children = hierarchy.get(parent_slug, [])
         parent_wp_id = self.page_mapping.get(parent_slug)
         
         for child_page in children:
-            self._migrate_single_page(child_page, parent_wp_id)
+            self._migrate_single_page(child_page, parent_wp_id, template=page_template)
             # Recursively migrate grandchildren
-            self._migrate_children(child_page['slug'], hierarchy)
+            self._migrate_children(child_page['slug'], hierarchy, page_template)
     
-    def _migrate_single_page(self, page, parent_id=None):
+    def _migrate_single_page(self, page, parent_id=None, template=''):
         """Migrate a single page to WordPress."""
         title = page['title']
         slug = page['slug'].strip('/')
@@ -178,7 +181,8 @@ class MigrationManager:
                 slug=slug,
                 content_blocks=content_blocks,
                 parent_id=parent_id,
-                status='publish'
+                status='publish',
+                template=template
             )
             
             if result['success']:
