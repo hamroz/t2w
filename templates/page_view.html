@@ -397,8 +397,76 @@
                 <div class="meta-item">
                     📄 {{ page.content|length }} content blocks
                 </div>
+                {% if page_quality %}
+                <div class="meta-item" style="background: {% if page_quality.quality_score >= 80 %}#d4edda{% elif page_quality.quality_score >= 60 %}#fff3cd{% else %}#f8d7da{% endif %}; 
+                                               color: {% if page_quality.quality_score >= 80 %}#155724{% elif page_quality.quality_score >= 60 %}#856404{% else %}#721c24{% endif %};">
+                    📊 Quality: {{ page_quality.quality_score }}%
+                </div>
+                {% endif %}
             </div>
         </div>
+        
+        <!-- Page Quality Analysis -->
+        {% if page_quality and (page_quality.issues or page_quality.suggestions) %}
+        <div class="content-section">
+            <h3 style="margin-bottom: 1.5rem; color: #495057; border-bottom: 2px solid #007bff; padding-bottom: 0.5em;">
+                📈 Content Quality Analysis
+            </h3>
+            
+            <div style="display: grid; grid-template-columns: auto 1fr; gap: 2em; margin-bottom: 1.5em;">
+                <div style="text-align: center;">
+                    <div style="font-size: 2.5em; font-weight: bold; 
+                               color: {% if page_quality.quality_score >= 80 %}#28a745{% elif page_quality.quality_score >= 60 %}#ffc107{% else %}#dc3545{% endif %};">
+                        {{ page_quality.quality_score }}%
+                    </div>
+                    <div style="font-size: 0.9em; color: #6c757d;">Quality Score</div>
+                </div>
+                
+                <div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1em; margin-bottom: 1em;">
+                        <div style="background: #f8f9fa; padding: 0.75em; border-radius: 4px; text-align: center;">
+                            <div style="font-weight: 600; color: #007bff;">{{ page_quality.content_stats.total_blocks }}</div>
+                            <div style="font-size: 0.8em; color: #6c757d;">Total Blocks</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 0.75em; border-radius: 4px; text-align: center;">
+                            <div style="font-weight: 600; color: #007bff;">{{ page_quality.content_stats.headings_count }}</div>
+                            <div style="font-size: 0.8em; color: #6c757d;">Headings</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 0.75em; border-radius: 4px; text-align: center;">
+                            <div style="font-weight: 600; color: #007bff;">{{ page_quality.content_stats.paragraphs_count }}</div>
+                            <div style="font-size: 0.8em; color: #6c757d;">Paragraphs</div>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 0.75em; border-radius: 4px; text-align: center;">
+                            <div style="font-weight: 600; color: #007bff;">{{ page_quality.content_stats.text_length }}</div>
+                            <div style="font-size: 0.8em; color: #6c757d;">Characters</div>
+                        </div>
+                    </div>
+                    
+                    {% if page_quality.issues %}
+                    <div style="margin-bottom: 1em;">
+                        <strong style="color: #dc3545;">⚠️ Issues:</strong>
+                        <ul style="margin: 0.5em 0; padding-left: 1.5em; font-size: 0.9em;">
+                            {% for issue in page_quality.issues %}
+                            <li style="color: #6c757d; margin-bottom: 0.25em;">{{ issue }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    {% if page_quality.suggestions %}
+                    <div>
+                        <strong style="color: #17a2b8;">💡 Suggestions:</strong>
+                        <ul style="margin: 0.5em 0; padding-left: 1.5em; font-size: 0.9em;">
+                            {% for suggestion in page_quality.suggestions %}
+                            <li style="color: #6c757d; margin-bottom: 0.25em;">{{ suggestion }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
         
         <!-- Content Section -->
         <div class="content-section">

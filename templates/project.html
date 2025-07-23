@@ -15,6 +15,260 @@
         .messages .error { background-color: #f8d7da; color: #721c24; }
         .messages .success { background-color: #d4edda; color: #155724; }
         .messages .warning { background-color: #fff3cd; color: #856404; }
+        .messages .info { background-color: #d1ecf1; color: #0c5460; }
+        
+        /* Workflow Stepper Styles */
+        .workflow-stepper {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2em;
+            border-radius: 12px;
+            margin-bottom: 2em;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .stepper-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2em;
+        }
+        
+        .stepper-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .stepper-progress {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .stepper-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+        
+        .stepper-steps::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.3);
+            z-index: 1;
+        }
+        
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            flex: 1;
+            max-width: 120px;
+        }
+        
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.5em;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .step-circle.completed {
+            background: #28a745;
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.3);
+        }
+        
+        .step-circle.active {
+            background: #ffc107;
+            box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.3);
+            animation: pulse 2s infinite;
+        }
+        
+        .step-label {
+            font-size: 0.8em;
+            opacity: 0.9;
+            margin-top: 0.25em;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        /* Dashboard Stats */
+        .dashboard-overview {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2em;
+            margin-bottom: 2em;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1em;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5em;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            border-color: #007bff;
+            box-shadow: 0 2px 8px rgba(0,123,255,0.15);
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 0.25em;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        /* Recommendations Panel */
+        .recommendations-panel {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5em;
+        }
+        
+        .recommendations-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 1em;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 0.5em;
+        }
+        
+        .recommendation {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 1em;
+            margin-bottom: 1em;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .recommendation.action { border-left-color: #28a745; background: #f8fff9; }
+        .recommendation.warning { border-left-color: #ffc107; background: #fffcf0; }
+        .recommendation.info { border-left-color: #17a2b8; background: #f0fdff; }
+        .recommendation.success { border-left-color: #28a745; background: #f8fff9; }
+        
+        .recommendation-title {
+            font-weight: 600;
+            margin-bottom: 0.5em;
+            font-size: 0.95em;
+        }
+        
+        .recommendation-description {
+            font-size: 0.85em;
+            color: #6c757d;
+            line-height: 1.5;
+        }
+        
+        .recommendation-action {
+            margin-top: 0.75em;
+        }
+        
+        .btn-recommendation {
+            background: #007bff;
+            color: white;
+            padding: 0.5em 1em;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn-recommendation:hover {
+            background: #0056b3;
+        }
+        
+        .btn-recommendation.success { background: #28a745; }
+        .btn-recommendation.success:hover { background: #1e7e34; }
+        .btn-recommendation.warning { background: #ffc107; color: #212529; }
+        .btn-recommendation.warning:hover { background: #e0a800; }
+        
+        /* Quick Actions */
+        .quick-actions {
+            background: #e9ecef;
+            padding: 1.5em;
+            border-radius: 8px;
+            margin-bottom: 2em;
+        }
+        
+        .quick-actions h3 {
+            margin-top: 0;
+            margin-bottom: 1em;
+            color: #495057;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1em;
+            flex-wrap: wrap;
+        }
+        
+        .btn-quick {
+            background: #007bff;
+            color: white;
+            padding: 0.75em 1.5em;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5em;
+        }
+        
+        .btn-quick:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,123,255,0.3);
+        }
+        
+        .btn-quick.secondary { background: #6c757d; }
+        .btn-quick.secondary:hover { background: #545b62; }
+        .btn-quick.success { background: #28a745; }
+        .btn-quick.success:hover { background: #1e7e34; }
+        
+        .btn-quick:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
         
         .project-layout { display: flex; gap: 2em; }
         .upload-section { flex: 1; }
@@ -50,36 +304,75 @@
         .breadcrumbs a { font-weight: bold; }
         .breadcrumbs span { color: #555; }
         
-        /* Tab Navigation Styles */
+        /* Tab Navigation */
         .project-tabs {
             display: flex;
-            border-bottom: 2px solid #dee2e6;
+            border-bottom: 2px solid #e9ecef;
             margin-bottom: 2em;
         }
+
         .tab-button {
             background: none;
             border: none;
-            padding: 12px 24px;
+            padding: 1em 2em;
             cursor: pointer;
-            font-size: 16px;
-            color: #495057;
+            font-size: 1em;
+            color: #6c757d;
             border-bottom: 3px solid transparent;
             transition: all 0.3s ease;
         }
-        .tab-button:hover {
-            background-color: #f8f9fa;
-            color: #007bff;
-        }
+
         .tab-button.active {
             color: #007bff;
             border-bottom-color: #007bff;
-            font-weight: 600;
+            background-color: #f8f9fa;
         }
+
+        .tab-button:hover:not(.active) {
+            color: #495057;
+            background-color: #f8f9fa;
+        }
+
         .tab-content {
             display: none;
         }
+
         .tab-content.active {
             display: block;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-overview {
+                grid-template-columns: 1fr;
+            }
+            
+            .stepper-steps {
+                flex-wrap: wrap;
+                gap: 1em;
+            }
+            
+            .stepper-steps::before {
+                display: none;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .project-layout {
+                flex-direction: column;
+            }
+            
+            .browser-section {
+                border-left: none;
+                border-top: 1px solid #ccc;
+                padding-left: 0;
+                padding-top: 2em;
+            }
         }
     </style>
     <script>
@@ -128,6 +421,176 @@
             </ul>
           {% endif %}
         {% endwith %}
+        
+        <!-- Workflow Stepper -->
+        <div class="workflow-stepper">
+            <div class="stepper-header">
+                <h2 class="stepper-title">🚀 Migration Workflow</h2>
+                <div class="stepper-progress">
+                    {% set completed_steps = workflow_status.values() | list | select | list | length %}
+                    {{ completed_steps }}/6 steps completed
+                </div>
+            </div>
+            <div class="stepper-steps">
+                <div class="step">
+                    <div class="step-circle {% if workflow_status.project_created %}completed{% endif %}">
+                        {% if workflow_status.project_created %}✓{% else %}1{% endif %}
+                    </div>
+                    <div class="step-label">Project<br>Created</div>
+                </div>
+                <div class="step">
+                    <div class="step-circle {% if workflow_status.files_uploaded %}completed{% elif workflow_status.project_created %}active{% endif %}">
+                        {% if workflow_status.files_uploaded %}✓{% else %}2{% endif %}
+                    </div>
+                    <div class="step-label">Files<br>Uploaded</div>
+                </div>
+                <div class="step">
+                    <div class="step-circle {% if workflow_status.files_extracted %}completed{% elif workflow_status.files_uploaded %}active{% endif %}">
+                        {% if workflow_status.files_extracted %}✓{% else %}3{% endif %}
+                    </div>
+                    <div class="step-label">Files<br>Extracted</div>
+                </div>
+                <div class="step">
+                    <div class="step-circle {% if workflow_status.content_parsed %}completed{% elif workflow_status.files_extracted %}active{% endif %}">
+                        {% if workflow_status.content_parsed %}✓{% else %}4{% endif %}
+                    </div>
+                    <div class="step-label">Content<br>Parsed</div>
+                </div>
+                <div class="step">
+                    <div class="step-circle {% if workflow_status.wordpress_tested %}completed{% elif workflow_status.content_parsed %}active{% endif %}">
+                        {% if workflow_status.wordpress_tested %}✓{% else %}5{% endif %}
+                    </div>
+                    <div class="step-label">WordPress<br>Connected</div>
+                </div>
+                <div class="step">
+                    <div class="step-circle {% if workflow_status.migration_completed %}completed{% elif workflow_status.wordpress_tested %}active{% endif %}">
+                        {% if workflow_status.migration_completed %}✓{% else %}6{% endif %}
+                    </div>
+                    <div class="step-label">Migration<br>Complete</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dashboard Overview -->
+        <div class="dashboard-overview">
+            <div class="stats-section">
+                <h3>📊 Project Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">{{ project_stats.uploaded_files_count }}</div>
+                        <div class="stat-label">Uploaded Files</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ project_stats.extracted_files_count }}</div>
+                        <div class="stat-label">Extracted Files</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ project_stats.parsed_pages_count }}</div>
+                        <div class="stat-label">Pages Found</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ project_stats.total_content_blocks }}</div>
+                        <div class="stat-label">Content Blocks</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ project_stats.menu_items_count }}</div>
+                        <div class="stat-label">Menu Items</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">{{ project_stats.successful_migrations }}</div>
+                        <div class="stat-label">Successful Migrations</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="recommendations-panel">
+                <h3 class="recommendations-title">💡 Smart Recommendations</h3>
+                {% for rec in recommendations %}
+                <div class="recommendation {{ rec.type }}">
+                    <div class="recommendation-title">{{ rec.title }}</div>
+                    <div class="recommendation-description">{{ rec.description }}</div>
+                    {% if rec.action %}
+                    <div class="recommendation-action">
+                        {% if rec.action == 'parse' %}
+                        <button onclick="runParser()" class="btn-recommendation">Run Parser</button>
+                        {% elif rec.action == 'wordpress' %}
+                        <a href="{{ url_for('wordpress_migration', project_name=project_name) }}" class="btn-recommendation">Configure WordPress</a>
+                        {% elif rec.action == 'migrate' %}
+                        <a href="{{ url_for('wordpress_migration', project_name=project_name) }}" class="btn-recommendation success">Start Migration</a>
+                        {% elif rec.action == 'review_content' %}
+                        <button onclick="switchTab('extraction')" class="btn-recommendation">Review Content</button>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Content Quality Analysis -->
+        {% if content_quality %}
+        <div class="quick-actions">
+            <h3>📈 Content Quality Analysis</h3>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2em; margin-bottom: 1.5em;">
+                <div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 3em; font-weight: bold; 
+                                   color: {% if content_quality.overall_score >= 80 %}#28a745{% elif content_quality.overall_score >= 60 %}#ffc107{% else %}#dc3545{% endif %};">
+                            {{ content_quality.overall_score }}%
+                        </div>
+                        <div style="font-size: 0.9em; color: #6c757d; margin-top: 0.5em;">Overall Quality Score</div>
+                    </div>
+                    <div style="margin-top: 1em; font-size: 0.85em;">
+                        <div>Completeness: {{ content_quality.completeness_score }}%</div>
+                        <div>Diversity: {{ content_quality.diversity_score }}%</div>
+                    </div>
+                </div>
+                <div>
+                    {% if content_quality.issues %}
+                    <div style="margin-bottom: 1em;">
+                        <strong style="color: #dc3545;">⚠️ Issues Found:</strong>
+                        <ul style="margin: 0.5em 0; padding-left: 1.5em; font-size: 0.9em;">
+                            {% for issue in content_quality.issues %}
+                            <li style="color: #6c757d; margin-bottom: 0.25em;">{{ issue }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    {% if content_quality.suggestions %}
+                    <div>
+                        <strong style="color: #17a2b8;">💡 Suggestions:</strong>
+                        <ul style="margin: 0.5em 0; padding-left: 1.5em; font-size: 0.9em;">
+                            {% for suggestion in content_quality.suggestions %}
+                            <li style="color: #6c757d; margin-bottom: 0.25em;">{{ suggestion }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <h3>⚡ Quick Actions</h3>
+            <div class="action-buttons">
+                <button onclick="runParser()" class="btn-quick" {% if not workflow_status.files_extracted %}disabled{% endif %}>
+                    🔍 Parse Content
+                </button>
+                <a href="{{ url_for('wordpress_migration', project_name=project_name) }}" class="btn-quick success" {% if not workflow_status.content_parsed %}style="opacity: 0.6; pointer-events: none;"{% endif %}>
+                    🚀 WordPress Migration
+                </a>
+                {% if parsed_data and parsed_data.pages %}
+                <a href="{{ url_for('download_json', project_name=project_name) }}" class="btn-quick secondary">
+                    📁 Download Data
+                </a>
+                {% endif %}
+                <button onclick="refreshStatus()" class="btn-quick secondary">
+                    🔄 Refresh Status
+                </button>
+            </div>
+        </div>
         
         <!-- Tab Navigation -->
         <div class="project-tabs">
@@ -244,5 +707,164 @@
             </div>
         </div>
     </div>
+    
+    <script>
+        function switchTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active class from all tab buttons
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // Show the selected tab content
+            const selectedTab = document.getElementById(tabName + '-tab');
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+
+            // Add active class to the clicked button
+            const clickedButton = document.querySelector(`[onclick="switchTab('${tabName}')"]`);
+            if (clickedButton) {
+                clickedButton.classList.add('active');
+            }
+        }
+
+        function runParser() {
+            const includeImages = document.getElementById('include-images').checked;
+            const url = "{{ url_for('run_parser', project_name=project_name) }}?include_images=" + includeImages;
+            
+            // Show loading state
+            const parseButton = document.querySelector('.btn-parse');
+            if (parseButton) {
+                parseButton.innerHTML = '⏳ Parsing...';
+                parseButton.disabled = true;
+            }
+            
+            window.location.href = url;
+        }
+
+        function refreshStatus() {
+            // Show loading state
+            const refreshButton = document.querySelector('button[onclick="refreshStatus()"]');
+            if (refreshButton) {
+                const originalText = refreshButton.innerHTML;
+                refreshButton.innerHTML = '⏳ Refreshing...';
+                refreshButton.disabled = true;
+                
+                // Refresh the page after a short delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            }
+        }
+
+        // Auto-refresh workflow status every 30 seconds
+        let statusRefreshInterval;
+        
+        function startStatusMonitoring() {
+            statusRefreshInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/project/{{ project_name }}/workflow-status');
+                    const data = await response.json();
+                    
+                    // Update stepper progress
+                    updateWorkflowStepper(data.workflow);
+                    
+                    // Update statistics
+                    updateStatistics(data.statistics);
+                    
+                    // Check if there are new recommendations
+                    if (data.recommendations && data.recommendations.length > 0) {
+                        updateRecommendations(data.recommendations);
+                    }
+                } catch (error) {
+                    console.error('Failed to refresh status:', error);
+                }
+            }, 30000); // 30 seconds
+        }
+        
+        function updateWorkflowStepper(workflow) {
+            const steps = [
+                'project_created', 'files_uploaded', 'files_extracted', 
+                'content_parsed', 'wordpress_tested', 'migration_completed'
+            ];
+            
+            steps.forEach((step, index) => {
+                const stepElement = document.querySelector(`.step:nth-child(${index + 1}) .step-circle`);
+                if (stepElement) {
+                    stepElement.className = 'step-circle';
+                    if (workflow[step]) {
+                        stepElement.classList.add('completed');
+                        stepElement.innerHTML = '✓';
+                    } else if (index > 0 && workflow[steps[index - 1]]) {
+                        stepElement.classList.add('active');
+                        stepElement.innerHTML = index + 1;
+                    } else {
+                        stepElement.innerHTML = index + 1;
+                    }
+                }
+            });
+            
+            // Update progress counter
+            const completedSteps = Object.values(workflow).filter(Boolean).length;
+            const progressElement = document.querySelector('.stepper-progress');
+            if (progressElement) {
+                progressElement.textContent = `${completedSteps}/6 steps completed`;
+            }
+        }
+        
+        function updateStatistics(stats) {
+            const statElements = document.querySelectorAll('.stat-card');
+            statElements.forEach(element => {
+                const label = element.querySelector('.stat-label').textContent;
+                const numberElement = element.querySelector('.stat-number');
+                
+                switch(label) {
+                    case 'Uploaded Files':
+                        numberElement.textContent = stats.uploaded_files_count || 0;
+                        break;
+                    case 'Extracted Files':
+                        numberElement.textContent = stats.extracted_files_count || 0;
+                        break;
+                    case 'Pages Found':
+                        numberElement.textContent = stats.parsed_pages_count || 0;
+                        break;
+                    case 'Content Blocks':
+                        numberElement.textContent = stats.total_content_blocks || 0;
+                        break;
+                    case 'Menu Items':
+                        numberElement.textContent = stats.menu_items_count || 0;
+                        break;
+                    case 'Successful Migrations':
+                        numberElement.textContent = stats.successful_migrations || 0;
+                        break;
+                }
+            });
+        }
+        
+        function updateRecommendations(recommendations) {
+            // This would update recommendations dynamically
+            // For now, we'll just log them
+            console.log('New recommendations:', recommendations);
+        }
+        
+        // Start monitoring when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            startStatusMonitoring();
+        });
+        
+        // Clean up interval when page unloads
+        window.addEventListener('beforeunload', function() {
+            if (statusRefreshInterval) {
+                clearInterval(statusRefreshInterval);
+            }
+        });
+    </script>
 </body>
 </html> 
