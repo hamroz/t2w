@@ -628,8 +628,12 @@
                             <input type="checkbox" id="include-images" checked>
                             <span>Include images in parsed data</span>
                         </label>
+                        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                            <input type="checkbox" id="debug-mode">
+                            <span>Enable debug mode (detailed menu parsing logs)</span>
+                        </label>
                         <p style="font-size: 0.9em; color: #666; margin: 0;">
-                            Uncheck to exclude image references from the JSON output (reduces file size)
+                            Debug mode provides detailed information about menu structure detection and parsing.
                         </p>
                     </div>
                     
@@ -737,7 +741,8 @@
 
         function runParser() {
             const includeImages = document.getElementById('include-images').checked;
-            const url = "{{ url_for('run_parser', project_name=project_name) }}?include_images=" + includeImages;
+            const debugMode = document.getElementById('debug-mode').checked;
+            const url = "{{ url_for('run_parser', project_name=project_name) }}?include_images=" + includeImages + "&debug=" + debugMode;
             
             // Show loading state
             const parseButton = document.querySelector('.btn-parse');

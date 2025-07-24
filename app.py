@@ -613,15 +613,39 @@ def run_parser(project_name):
         flash(f"Project '{project_name}' not found.", 'error')
         return redirect(url_for('index'))
 
-    # Get the include_images parameter from query string (default: True)
+    # Get include_images parameter from query string
     include_images = request.args.get('include_images', 'true').lower() == 'true'
     
-    flash("Starting the parsing process...", "info")
-    
+    # Get debug parameter for menu parsing (optional)
+    debug_mode = request.args.get('debug', 'false').lower() == 'true'
+
     # Run the parser with the include_images option
     try:
-        structured_data = parse_tilda_export(project_path, include_images)
-        
+        if debug_mode:
+            # Capture debug output
+            import io
+            import sys
+            
+            # Capture stdout to get debug information
+            old_stdout = sys.stdout
+            sys.stdout = captured_output = io.StringIO()
+            
+            try:
+                structured_data = parse_tilda_export(project_path, include_images, debug=True)
+                debug_output = captured_output.getvalue()
+            finally:
+                sys.stdout = old_stdout
+                
+            # Add debug info to flash messages
+            if debug_output:
+                debug_lines = debug_output.strip().split('\n')
+                for line in debug_lines[:10]:  # Show first 10 lines
+                    flash(f"🔍 {line}", 'info')
+                if len(debug_lines) > 10:
+                    flash(f"... and {len(debug_lines) - 10} more debug lines", 'info')
+        else:
+            structured_data = parse_tilda_export(project_path, include_images)
+            
         if "error" in structured_data:
             # Determine error type based on error message
             error_msg = structured_data['error']

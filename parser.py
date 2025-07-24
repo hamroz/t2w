@@ -89,47 +89,199 @@ def get_page_slug(filepath, soup):
         return '/'
     return f"/{slug}"
 
-def parse_menu(soup):
+def parse_menu(soup, debug=False):
     """
     Extracts the main menu and submenus from the Tilda page soup.
-    Tilda uses a specific structure where main menu items link to submenu "hooks".
+    Supports multiple Tilda menu structures (T228, T456, etc.).
     """
     menu = []
     
-    # Find the main navigation container
-    main_nav = soup.find('nav', class_='t228__centercontainer')
+    if debug:
+        print("🔍 Starting menu parsing...")
+    
+    # Try different navigation patterns used by Tilda
+    navigation_selectors = [
+        # T228 pattern (original)
+        'nav.t228__centercontainer',
+        # T456 pattern  
+        'nav.t456__rightwrapper',
+        # Generic patterns as fallbacks
+        'nav.t-menu',
+        'div.t-menu',
+        # Look for any nav with menu classes
+        'nav[class*="menu"]',
+        'div[class*="menu"]'
+    ]
+    
+    main_nav = None
+    menu_list_selector = None
+    
+    # Find the navigation container
+    for selector in navigation_selectors:
+        main_nav = soup.select_one(selector)
+        if main_nav:
+            if debug:
+                print(f"✅ Found navigation with selector: {selector}")
+                print(f"   Classes: {main_nav.get('class', [])}")
+            
+            # Determine the appropriate list item selector based on found nav
+            if 't228' in main_nav.get('class', []):
+                menu_list_selector = '.t228__list_item > a.t-menu__link-item'
+            elif 't456' in main_nav.get('class', []):
+                menu_list_selector = '.t456__list_item > a.t-menu__link-item'
+            else:
+                # Generic fallback
+                menu_list_selector = 'a.t-menu__link-item'
+            
+            if debug:
+                print(f"   Using menu list selector: {menu_list_selector}")
+            break
+    
     if not main_nav:
+        # Final fallback: look for any ul with menu-related classes
+        main_nav = soup.select_one('ul.t-menu__list, ul[class*="menu"], ul[class*="list"]')
+        if main_nav:
+            menu_list_selector = 'a.t-menu__link-item'
+            if debug:
+                print(f"✅ Found navigation with fallback UL selector")
+                print(f"   Classes: {main_nav.get('class', [])}")
+    
+    if not main_nav:
+        if debug:
+            print("❌ No navigation container found")
         return []
 
     # Find all top-level menu items
-    main_menu_links = main_nav.select('.t228__list_item > a.t-menu__link-item')
+    main_menu_links = main_nav.select(menu_list_selector)
+    
+    if debug:
+        print(f"🔗 Found {len(main_menu_links)} menu links with selector: {menu_list_selector}")
+    
+    # If no links found, try alternative selectors
+    if not main_menu_links:
+        alternative_selectors = [
+            'a.t-menu__link-item',
+            'a[class*="menu"]',
+            'li > a'
+        ]
+        for alt_selector in alternative_selectors:
+            main_menu_links = main_nav.select(alt_selector)
+            if main_menu_links:
+                if debug:
+                    print(f"✅ Found {len(main_menu_links)} links with alternative selector: {alt_selector}")
+                break
 
-    for link in main_menu_links:
+    if debug and not main_menu_links:
+        print("❌ No menu links found with any selector")
+        # Show available links for debugging
+        all_links = main_nav.find_all('a')
+        print(f"   Available links in nav: {len(all_links)}")
+        for i, link in enumerate(all_links[:5]):  # Show first 5
+            print(f"   {i+1}. {link.get_text(strip=True)} -> {link.get('href', '')}")
+
+    for i, link in enumerate(main_menu_links):
         title = link.get_text(strip=True)
         href = link.get('href', '')
+        
+        if debug:
+            print(f"\n📋 Processing menu item {i+1}: '{title}' -> '{href}'")
+        
+        # Skip empty titles or obvious non-menu items
+        if not title or title.lower() in ['menu', '']:
+            if debug:
+                print(f"   ⏭️ Skipping empty/invalid title")
+            continue
         
         menu_item = {"title": title}
 
         # Case 1: Item has a submenu
         if href.startswith('#submenu:'):
-            submenu_container = soup.find('div', {'data-tooltip-hook': href})
+            if debug:
+                print(f"   🔽 Submenu detected: {href}")
+            
+            # Handle both "#submenu:HVAC" and "#submenu: HVAC" (with space)
+            submenu_hook = href.strip()
+            submenu_container = soup.find('div', {'data-tooltip-hook': submenu_hook})
+            
+            # If exact match fails, try with/without spaces
+            if not submenu_container:
+                # Try without space after colon
+                normalized_hook = href.replace('#submenu: ', '#submenu:')
+                submenu_container = soup.find('div', {'data-tooltip-hook': normalized_hook})
+                if debug and submenu_container:
+                    print(f"   ✅ Found submenu with normalized hook (no space): {normalized_hook}")
+            
+            if not submenu_container:
+                # Try with space after colon  
+                normalized_hook = href.replace('#submenu:', '#submenu: ')
+                submenu_container = soup.find('div', {'data-tooltip-hook': normalized_hook})
+                if debug and submenu_container:
+                    print(f"   ✅ Found submenu with normalized hook (with space): {normalized_hook}")
+            
             if submenu_container:
                 submenu_list = []
-                submenu_links = submenu_container.select('.t794__list_item a')
-                for sub_link in submenu_links:
+                # Look for submenu links with multiple possible selectors
+                submenu_selectors = [
+                    '.t794__list_item a',
+                    '.t794__link',
+                    'a[role="menuitem"]',
+                    'li a',
+                    'a'
+                ]
+                
+                submenu_links = []
+                for sub_selector in submenu_selectors:
+                    submenu_links = submenu_container.select(sub_selector)
+                    if submenu_links:
+                        if debug:
+                            print(f"   📎 Found {len(submenu_links)} submenu links with: {sub_selector}")
+                        break
+                
+                for j, sub_link in enumerate(submenu_links):
                     sub_title = sub_link.get_text(strip=True)
                     sub_href = sub_link.get('href', '')
+                    
+                    if debug:
+                        print(f"     {j+1}. '{sub_title}' -> '{sub_href}'")
+                    
+                    # Skip empty titles
+                    if not sub_title:
+                        continue
+                    
                     # Ensure slug has a leading slash
-                    sub_slug = sub_href if sub_href.startswith('/') else f"/{sub_href}"
+                    if sub_href and not sub_href.startswith(('http', 'mailto:', 'tel:')):
+                        sub_slug = sub_href if sub_href.startswith('/') else f"/{sub_href}"
+                    else:
+                        sub_slug = sub_href
+                        
                     submenu_list.append({"title": sub_title, "slug": sub_slug})
                 
                 if submenu_list:
-                    # The parent's slug is derived from its first child
-                    menu_item['slug'] = submenu_list[0]['slug']
+                    # The parent's slug is derived from its first child or the submenu name
+                    first_child_slug = submenu_list[0]['slug']
+                    # Try to create a logical parent slug
+                    if '/' in first_child_slug and first_child_slug.count('/') > 1:
+                        # Extract parent path (e.g., /hvac-services/repair -> /hvac-services)
+                        parent_parts = first_child_slug.split('/')[:-1]
+                        menu_item['slug'] = '/'.join(parent_parts) if len(parent_parts) > 1 else '/'
+                    else:
+                        # Use the title as the slug
+                        menu_item['slug'] = f"/{title.lower().replace(' ', '-')}"
+                    
                     menu_item['submenu'] = submenu_list
+                    
+                    if debug:
+                        print(f"   ✅ Created submenu with {len(submenu_list)} items, parent slug: {menu_item['slug']}")
+                else:
+                    # A dropdown menu without content
+                    menu_item['slug'] = f"/{title.lower().replace(' ', '-')}"
+                    if debug:
+                        print(f"   ⚠️ Submenu container found but no links extracted")
             else:
-                # A dropdown menu without content
-                menu_item['slug'] = '#'
+                # Submenu hook found but no container - create a placeholder
+                menu_item['slug'] = f"/{title.lower().replace(' ', '-')}"
+                if debug:
+                    print(f"   ❌ Submenu hook found but no container: {href}")
                 
         # Case 2: Item is a direct link
         else:
@@ -138,11 +290,24 @@ def parse_menu(soup):
             elif href.endswith('.html'):
                 slug = href.replace('.html', '')
                 menu_item['slug'] = '/' if slug == 'index' else f'/{slug}'
-            else:
-                # Keep non-standard links as they are (e.g., tel:, mailto:)
+            elif href.startswith(('http', 'mailto:', 'tel:')):
+                # Keep external links, emails, and phone numbers as they are
                 menu_item['slug'] = href
+            else:
+                # Default case: create slug from title
+                menu_item['slug'] = f"/{title.lower().replace(' ', '-')}"
+            
+            if debug:
+                print(f"   🔗 Direct link, slug: {menu_item['slug']}")
         
         menu.append(menu_item)
+
+    if debug:
+        print(f"\n🎉 Menu parsing complete! Found {len(menu)} top-level menu items")
+        for item in menu:
+            submenu_count = len(item.get('submenu', []))
+            submenu_text = f" ({submenu_count} subitems)" if submenu_count > 0 else ""
+            print(f"   - {item['title']} -> {item['slug']}{submenu_text}")
 
     return menu
 
@@ -368,7 +533,7 @@ def parse_page_content(soup, include_images=True):
 
     return content
 
-def parse_tilda_export(project_path, include_images=True):
+def parse_tilda_export(project_path, include_images=True, debug=False):
     """
     Main function to parse the extracted Tilda project.
     Returns a dictionary with structured pages and menu data.
@@ -383,14 +548,24 @@ def parse_tilda_export(project_path, include_images=True):
 
     structured_data = {"pages": [], "menu": []}
     
+    if debug:
+        print(f"🚀 Starting Tilda export parsing...")
+        print(f"   Found {len(html_files)} HTML files")
+    
     # First, parse the main page (index.html) to find the menu, since it's shared.
     if html_files:
+        if debug:
+            print(f"📋 Parsing menu from: {html_files[0]}")
+        
         # Get the combined soup to ensure the header is properly loaded
         combined_soup_for_menu = get_combined_soup(html_files[0])
-        structured_data['menu'] = parse_menu(combined_soup_for_menu)
+        structured_data['menu'] = parse_menu(combined_soup_for_menu, debug=debug)
 
     # Then, parse all pages for content
-    for file_path in html_files:
+    for i, file_path in enumerate(html_files):
+        if debug:
+            print(f"\n📄 Parsing page {i+1}/{len(html_files)}: {os.path.basename(file_path)}")
+        
         # Get the full, combined soup for the page
         soup = get_combined_soup(file_path)
         
@@ -398,11 +573,26 @@ def parse_tilda_export(project_path, include_images=True):
         page_slug = get_page_slug(file_path, soup)
         page_content = parse_page_content(soup, include_images)
         
+        if debug:
+            print(f"   Title: {page_title}")
+            print(f"   Slug: {page_slug}")
+            print(f"   Content blocks: {len(page_content)}")
+        
         if page_content:
             structured_data["pages"].append({
                 "title": page_title,
                 "slug": page_slug,
                 "content": page_content
             })
+
+    if debug:
+        total_pages = len(structured_data["pages"])
+        total_menu_items = len(structured_data["menu"])
+        total_content_blocks = sum(len(page.get('content', [])) for page in structured_data["pages"])
+        
+        print(f"\n🎉 Parsing complete!")
+        print(f"   Pages: {total_pages}")
+        print(f"   Menu items: {total_menu_items}")
+        print(f"   Total content blocks: {total_content_blocks}")
 
     return structured_data 
